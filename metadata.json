@@ -1,0 +1,8 @@
+{
+  "name": "IdeaForge — AI Architekt nápadov",
+  "description": "Progresívna webová aplikácia, ktorá premení váš nápad na produkt, technický návrh, realizačný plán a marketingovú stratégiu v slovenčine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
