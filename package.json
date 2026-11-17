@@ -12,17 +12,25 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.121",
+    "@ai-sdk/mistral": "^4.0.87",
+    "@ai-sdk/react": "^4.0.177",
     "@google/genai": "^3.4.0",
+    "@tailwindcss/postcss": "^4.3.5",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
+    "ai": "^7.0.173",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "next": "^16.4.6",
+    "postcss": "^8.5.33",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "vite": "^8.3.0",
-    "vite-plugin-pwa": "^2.0.0"
+    "vite-plugin-pwa": "^2.0.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
