@@ -50,7 +50,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
       onClick={onClose}
     >
       <aside
-        className="flex h-full w-full max-w-sm flex-col border-r border-[#E5E7EB] bg-white pt-[env(safe-area-inset-top)] dark:border-[#27272A] dark:bg-[#111113]"
+        className="flex h-full w-full max-w-sm flex-col border-r border-[#E5E7EB] bg-white pt-[max(env(safe-area-inset-top),12px)] dark:border-[#27272A] dark:bg-[#111113]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drawer Header */}

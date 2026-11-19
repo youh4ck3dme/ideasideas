@@ -1,5 +1,8 @@
 import express from 'express';
 import { GoogleGenAI, ThinkingLevel, Type, type Schema } from '@google/genai';
+import { checkRateLimit } from '../lib/rate-limiter.ts';
+import { applySecurity } from './security.ts';
+import { validateGenerateBody, validateRefineBody } from './validateInput.ts';
 
 export const MODEL_ID = 'gemini-4-hydrogen';
 
@@ -794,16 +797,47 @@ Vráť prosím kompletný, neprázdny JSON objekt v slovenčine presne podľa za
   throw new Error(`VALIDATION_FAILED: ${lastValidationReason}`);
 }
 
-export function createApiApp() {
+export interface ApiAppOptions {
+  aiClientFactory?: () => GoogleGenAI | null;
+  rateLimit?: { generate: number; refine: number; windowMs?: number } | false;
+}
+
+export function createApiApp(options: ApiAppOptions = {}) {
   const app = express();
+  applySecurity(app);
   app.use(express.json({ limit: '2mb' }));
 
+  const aiClientFactory = options.aiClientFactory ?? getAiClient;
+  const rateLimitConfig =
+    options.rateLimit === false ? null : (options.rateLimit ?? { generate: 10, refine: 20, windowMs: 60_000 });
+
+  async function checkRequestRateLimit(
+    req: express.Request,
+    res: express.Response,
+    limit: number
+  ): Promise<boolean> {
+    if (!rateLimitConfig) return true;
+    const ip = req.ip ?? 'unknown';
+    const result = await checkRateLimit(ip, limit, rateLimitConfig.windowMs);
+    res.setHeader('X-RateLimit-Limit', String(result.limit));
+    res.setHeader('X-RateLimit-Remaining', String(result.remaining));
+    if (!result.success) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
+      res.setHeader('Retry-After', String(retryAfterSeconds));
+      res.status(429).json({
+        error: 'Príliš veľa požiadaviek. Skúste to prosím o chvíľu znova.',
+      });
+      return false;
+    }
+    return true;
+  }
+
   app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, hasKey: Boolean(getAiClient()) });
+    res.json({ ok: true, hasKey: Boolean(aiClientFactory()) });
   });
 
   app.post('/api/generate', async (req, res) => {
-    const ai = getAiClient();
+    const ai = aiClientFactory();
     if (!ai) {
       res.status(503).json({
         error:
@@ -812,19 +846,14 @@ export function createApiApp() {
       return;
     }
 
-    const body = req.body ?? {};
-    const idea = typeof body.idea === 'string' ? body.idea.trim() : '';
-    const targetAudience =
-      typeof body.targetAudience === 'string' && body.targetAudience.trim()
-        ? body.targetAudience.trim()
-        : 'Nešpecifikovaná (navrhni najvhodnejšiu)';
-    const budget = typeof body.budget === 'string' ? body.budget : 'Nízky';
-    const projectType = typeof body.projectType === 'string' ? body.projectType : 'SaaS';
+    const parsed = validateGenerateBody(req.body);
+    if ('error' in parsed) {
+      res.status(400).json({ error: parsed.error });
+      return;
+    }
+    const { idea, targetAudience, budget, projectType } = parsed.value;
 
-    if (idea.length < 10) {
-      res.status(400).json({
-        error: 'Opíš prosím svoj nápad podrobnejšie (minimálne 10 znakov).',
-      });
+    if (rateLimitConfig && !(await checkRequestRateLimit(req, res, rateLimitConfig.generate))) {
       return;
     }
 
@@ -853,7 +882,7 @@ Prispôsob technický stack, rozpočtové odhady v EUR, realizačný plán, mark
   });
 
   app.post('/api/refine', async (req, res) => {
-    const ai = getAiClient();
+    const ai = aiClientFactory();
     if (!ai) {
       res.status(503).json({
         error:
@@ -862,10 +891,16 @@ Prispôsob technický stack, rozpočtové odhady v EUR, realizačný plán, mark
       return;
     }
 
-    const body = req.body ?? {};
-    const tabKey = typeof body.tabKey === 'string' ? (body.tabKey as SectionKey) : ('' as SectionKey);
-    const instruction = typeof body.instruction === 'string' ? body.instruction.trim() : '';
-    const project = body.project;
+    const parsed = validateRefineBody(req.body);
+    if ('error' in parsed) {
+      res.status(400).json({ error: parsed.error });
+      return;
+    }
+    const { tabKey, instruction, project } = parsed.value;
+
+    if (rateLimitConfig && !(await checkRequestRateLimit(req, res, rateLimitConfig.refine))) {
+      return;
+    }
 
     const schemaMap: Record<SectionKey, Schema> = {
       promo: promoSchema,
@@ -875,17 +910,17 @@ Prispôsob technický stack, rozpočtové odhady v EUR, realizačný plán, mark
       antifail: antifailSchema,
     };
 
-    const targetSchema = schemaMap[tabKey];
-    if (!targetSchema || !project || !instruction) {
+    const targetSchema = schemaMap[tabKey as SectionKey];
+    if (!targetSchema) {
       res.status(400).json({
-        error: 'Zadaj prosím jasnú inštrukciu na úpravu tejto sekcie.',
+        error: 'Neplatná sekcia na úpravu.',
       });
       return;
     }
 
     const prompt = `Používateľ chce upraviť alebo rozpracovať výhradne sekciu "${tabKey}" existujúceho projektu "${project.title}".
-Pôvodný nápad: ${project.input?.idea ?? ''}
-Typ: ${project.input?.projectType ?? ''}, Rozpočet: ${project.input?.budget ?? ''}, Cieľovka: ${project.input?.targetAudience ?? ''}
+Pôvodný nápad: ${String(project.input?.idea ?? '')}
+Typ: ${String(project.input?.projectType ?? '')}, Rozpočet: ${String(project.input?.budget ?? '')}, Cieľovka: ${String(project.input?.targetAudience ?? '')}
 
 Aktuálny obsah sekcie "${tabKey}":
 ${JSON.stringify(project.blueprint?.[tabKey] ?? {}, null, 2)}

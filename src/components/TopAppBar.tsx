@@ -24,7 +24,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
   onOpenExport,
 }) => {
   return (
-    <header className="no-print shrink-0 border-b border-[#E5E7EB] bg-white/90 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-md dark:border-[#27272A] dark:bg-[#09090B]/90 sm:px-6">
+    <header className="no-print shrink-0 border-b border-[#E5E7EB] bg-white/90 px-3 pt-[max(env(safe-area-inset-top),12px)] backdrop-blur-md dark:border-[#27272A] dark:bg-[#09090B]/90 sm:px-6">
       <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-3">
         {/* Left Zone: History + Brand Wordmark */}
         <div className="flex items-center gap-2 shrink-0">

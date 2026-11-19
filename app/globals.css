@@ -7,6 +7,28 @@
 }
 
 @layer base {
+  * {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  input,
+  textarea,
+  [contenteditable='true'] {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
+  }
+
+  img,
+  svg,
+  a {
+    -webkit-user-drag: none !important;
+    user-drag: none !important;
+  }
+
   html,
   body {
     height: 100dvh;
@@ -16,6 +38,8 @@
     padding: 0;
     overflow: hidden;
     overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    touch-action: pan-y;
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
   }
@@ -31,12 +55,24 @@
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+/* Hide scrollbars on touch devices for a clean native-app look (desktop keeps the subtle scrollbar) */
+@media (pointer: coarse) {
+  .custom-scrollbar {
+    scrollbar-width: none;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Custom subtle scrollbars for inner scrollable viewports */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(113, 113, 122, 0.25) transparent;
+  touch-action: pan-y;
 }
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

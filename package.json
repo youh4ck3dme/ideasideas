@@ -8,6 +8,10 @@
     "start": "node server.ts",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "tsx --test server/*.test.ts src/utils/*.test.ts tests/unit/*.test.ts tests/e2e/*.test.ts",
+    "test:unit": "tsx --test server/*.test.ts src/utils/*.test.ts tests/unit/*.test.ts",
+    "test:e2e": "tsx --test tests/e2e/*.test.ts",
+    "check": "tsc --noEmit && tsx --test server/*.test.ts src/utils/*.test.ts tests/unit/*.test.ts tests/e2e/*.test.ts && vite build",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit"
   },
@@ -33,14 +37,15 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "happy-dom": "^21.0.4",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
-    "typescript": "^7.0.2",
-    "@types/express": "^4.17.21"
+    "typescript": "^7.0.2"
   }
 }
