@@ -1,6 +1,6 @@
 import { createGoogle } from '@ai-sdk/google';
 import { createMistral } from '@ai-sdk/mistral';
-import type { LanguageModelV1 } from 'ai';
+import type { LanguageModel } from 'ai';
 
 export type AIModelId =
   | 'gemini-fast'
@@ -74,7 +74,7 @@ export function getMistralProvider() {
   });
 }
 
-export function resolveModel(modelId: AIModelId): LanguageModelV1 {
+export function resolveModel(modelId: AIModelId): LanguageModel {
   const google = getGoogleProvider();
   const mistral = getMistralProvider();
 
@@ -94,7 +94,7 @@ export function resolveModel(modelId: AIModelId): LanguageModelV1 {
 }
 
 export function getFailoverModel(primaryModelId: AIModelId): {
-  model: LanguageModelV1;
+  model: LanguageModel;
   modelId: AIModelId;
   label: string;
 } | null {
