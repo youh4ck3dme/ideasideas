@@ -95,12 +95,15 @@ Posledná aktualizácia: pozri nižšie sekciu „Čo bolo zmenené" — tie bod
 - [x] Zrkadlenie všetkých CSS zmien do `app/globals.css` (Next migrácia)
 
 ### 🟠 P1 — pred produkčným launchom
-- [ ] **Bezpečnosť na Express serveri** (`server.ts`): pridať `helmet`-ekvivalent (CSP `default-src 'self'`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`), CORS obmedziť na vlastnú doménu, `trust proxy` pre správne IP pri rate limite za proxy.
-- [ ] **Serverová validácia vstupu** pre `/api/generate` a `/api/refine` (max. dĺžka `idea` 2500 znakov, whitelist `budget`/`projectType`) — dnes sa spolieha len na klienta.
-- [x] **Test script**: `"test": "tsx --test server/*.test.ts src/utils/*.test.ts"` v `package.json` (`bun run test` → 13/13 pass).
+- [x] **Bezpečnosť na Express serveri**: `server/security.ts` (nosniff, X-Frame-Options, Referrer-Policy, CSP s hashom inline theme skriptu, `trust proxy`, same-origin 403 pre `/api/*`) + hlavičky aj na edge cez `vercel.json` `headers`.
+- [x] **Serverová validácia vstupu**: `server/validateInput.ts` — idea 10–2500 znakov, whitelist `budget`/`projectType`, refine: sekcia + inštrukcia 3–500 + kompletný projekt; zapojené do `/api/generate` a `/api/refine`.
+- [x] **Rate limit aj na Express API** (produkčná Vercel funkcia `api/index.ts` ho doteraz nemala): generate 10/min/IP, refine 20/min/IP, 429 + `Retry-After` + `X-RateLimit-*` (`lib/rate-limiter.ts` cez `createApiApp`).
+- [x] **Test script**: `bun run test` / `bun run check` (lint + testy + build) v `package.json`.
 - [ ] ~~GitHub Actions CI~~ **zámerne nepridávať** — testy bežia iba lokálne v tomto prostredí; repo nemá `.github/workflows` (GitGuardian beží ako externá integrácia).
-- [ ] **E2E testy na mobile viewport** (Playwright, `iPhone 14 Pro` / `Pixel 7`): overiť, že nejde označiť text, že pull-to-refresh nefunguje, že klávesnica neposúva obsah mimo obrazovku.
-- [ ] **Next.js migrácia dokončená**: `app/layout.tsx` s `export const viewport = { width: 'device-width', initialScale: 1, maximumScale: 1, userScalable: false, viewportFit: 'cover', interactiveWidgets: 'resizes-content', themeColor: [...] }` a `app/page.tsx`; rovnaké pravidlá preniesť aj tam.
+- [x] **E2E testy**: `tests/e2e/app.e2e.test.ts` (happy-dom, skutočný React strom App): validačná chyba, kompletný generate flow cez mock `/api/generate`, prepínanie tabov + refine cez mock `/api/refine`, history drawer + export modal. **Unit/integračné**: `tests/unit/` — validácia, rate-limiter, bezpečnostné hlavičky + 400/403/429/503/200 cez loopback server, **egress allowlist** (žiadne externé URL mimo allowlistu), native-feel CSS guard. **Funkčné AI**: serverový pipeline s mock Gemini klientom (parse → schema validácia → 200) + AI flow v UI e2e.
+- [ ] **Prehliadačové e2e (Playwright)** na mobile viewportoch → až P2 (vyžaduje prostredie s prehliadačom; tu beží DOM-level e2e).
+- [x] **Produkčný master prompt pre Vercel deploy**: `docs/VERCEL_DEPLOY_MASTER_PROMPT.md` (čo sa deployuje, env premenné, kroky, bezpečnosť, post-deploy smoke checklist, rollback).
+- [ ] **Next.js migrácia dokončená**: `app/layout.tsx` s `export const viewport = { width: 'device-width', initialScale: 1, maximumScale: 1, userScalable: false, viewportFit: 'cover', interactiveWidgets: 'resizes-content', themeColor: [...] }` a `app/page.tsx`; rovnaké pravidlá preniesť aj tam. (Nie je deploy blocker — Vercel beží na Vite + `api/index.ts` funkcii podľa `vercel.json`.)
 - [ ] **PWA/iOS polish**: `apple-mobile-web-app-status-bar-style: black-translucent`, iOS splash screeny (720/1170/…), notifikácia „Je dostupná nová verzia" pri SW update, `maskable` ikona už je.
 - [ ] **A11y audit**: `prefers-reduced-motion` pre progress animácie a `active:scale` efekty, kontrola kontrastu, focus-visible štýly, dokumentácia výnimky WCAG 1.4.4 (zakázaný zoom) s odôvodnením (PWA standalone).
 - [ ] **Dáta používateľa**: export/import všetkých projektov (JSON záloha) — dnes len Markdown jedného projektu a localStorage bez migrácie verzie.
