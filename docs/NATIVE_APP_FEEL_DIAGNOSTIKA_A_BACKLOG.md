@@ -97,7 +97,8 @@ Posledná aktualizácia: pozri nižšie sekciu „Čo bolo zmenené" — tie bod
 ### 🟠 P1 — pred produkčným launchom
 - [ ] **Bezpečnosť na Express serveri** (`server.ts`): pridať `helmet`-ekvivalent (CSP `default-src 'self'`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`), CORS obmedziť na vlastnú doménu, `trust proxy` pre správne IP pri rate limite za proxy.
 - [ ] **Serverová validácia vstupu** pre `/api/generate` a `/api/refine` (max. dĺžka `idea` 2500 znakov, whitelist `budget`/`projectType`) — dnes sa spolieha len na klienta.
-- [ ] **Test script + CI**: `"test": "tsx --test server/aiArchitect.test.ts src/utils/projectLogic.test.ts"` do `package.json` + GitHub Actions (lint `tsc --noEmit`, testy, `vite build`).
+- [x] **Test script**: `"test": "tsx --test server/*.test.ts src/utils/*.test.ts"` v `package.json` (`bun run test` → 13/13 pass).
+- [ ] ~~GitHub Actions CI~~ **zámerne nepridávať** — testy bežia iba lokálne v tomto prostredí; repo nemá `.github/workflows` (GitGuardian beží ako externá integrácia).
 - [ ] **E2E testy na mobile viewport** (Playwright, `iPhone 14 Pro` / `Pixel 7`): overiť, že nejde označiť text, že pull-to-refresh nefunguje, že klávesnica neposúva obsah mimo obrazovku.
 - [ ] **Next.js migrácia dokončená**: `app/layout.tsx` s `export const viewport = { width: 'device-width', initialScale: 1, maximumScale: 1, userScalable: false, viewportFit: 'cover', interactiveWidgets: 'resizes-content', themeColor: [...] }` a `app/page.tsx`; rovnaké pravidlá preniesť aj tam.
 - [ ] **PWA/iOS polish**: `apple-mobile-web-app-status-bar-style: black-translucent`, iOS splash screeny (720/1170/…), notifikácia „Je dostupná nová verzia" pri SW update, `maskable` ikona už je.
