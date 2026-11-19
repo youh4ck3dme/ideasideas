@@ -10,6 +10,7 @@ import {
 import type { BudgetLevel, IdeaContextInput, ProjectType } from '../types/project';
 import { IDEA_EXAMPLES } from '../data/sampleProjects';
 import { validateIdeaInput } from '../utils/projectLogic';
+import { scrollBehavior } from '../utils/motion';
 
 interface IdeaCaptureScreenProps {
   isGenerating: boolean;
@@ -220,7 +221,7 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
             onFocus={(e) => {
               const el = e.currentTarget;
               window.setTimeout(() => {
-                el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                el.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
               }, 150);
             }}
             placeholder="Opíš svoj nápad na produkt, službu alebo aplikáciu..."
@@ -264,7 +265,7 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
                     onFocus={(e) => {
                       const el = e.currentTarget;
                       window.setTimeout(() => {
-                        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                        el.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
                       }, 150);
                     }}
                     placeholder="Napr. slovenskí živnostníci, lokálne kaviarne, rodičia..."

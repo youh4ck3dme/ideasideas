@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowUp, Loader2 } from 'lucide-react';
 import type { WorkspaceTabKey } from '../types/project';
+import { scrollBehavior } from '../utils/motion';
 
 interface RefineBarProps {
   tabKey: WorkspaceTabKey;
@@ -69,7 +70,7 @@ export const RefineBar: React.FC<RefineBarProps> = ({
           onFocus={(e) => {
             const el = e.currentTarget;
             window.setTimeout(() => {
-              el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              el.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
             }, 150);
           }}
           disabled={isRefining}

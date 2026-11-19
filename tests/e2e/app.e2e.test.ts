@@ -238,3 +238,38 @@ test('e2e: história projektov (drawer) a export modal fungujú', async () => {
     await h.act(async () => h.root.unmount());
   }
 });
+
+test('e2e: Escape zavrie history drawer', async () => {
+  const h = await createHarness();
+  try {
+    const historyBtn = h.container.querySelector('button[aria-label^="Otvoriť históriu projektov"]')!;
+    await h.act(async () => click(h.window, historyBtn));
+    await flush(h);
+    assert.match(h.container.textContent ?? '', /Uložené projekty/);
+    await h.act(async () => {
+      h.window.dispatchEvent(new h.window.KeyboardEvent('keydown', { key: 'Escape' }));
+    });
+    await flush(h);
+    assert.ok(!/Uložené projekty/.test(h.container.textContent ?? ''), 'drawer sa zavrel po Escape');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: controllerchange zobrazí SW update toast', async () => {
+  const h = await createHarness();
+  try {
+    assert.ok(!/nová verzia aplikácie/i.test(h.container.textContent ?? ''), 'toast predtým skrytý');
+    await h.act(async () => {
+      h.window.dispatchEvent(new h.window.Event('controllerchange'));
+    });
+    await flush(h);
+    assert.match(h.container.textContent ?? '', /nová verzia aplikácie/i, 'toast sa zobrazil');
+    const reloadBtn = [...h.container.querySelectorAll('button')].find((b: any) =>
+      (b.textContent ?? '').includes('Obnoviť')
+    );
+    assert.ok(reloadBtn, 'tlačidlo Obnoviť existuje');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});

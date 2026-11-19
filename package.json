@@ -13,6 +13,7 @@
     "test:e2e": "tsx --test tests/e2e/*.test.ts",
     "check": "tsc --noEmit && tsx --test server/*.test.ts src/utils/*.test.ts tests/unit/*.test.ts tests/e2e/*.test.ts && vite build",
     "clean": "rm -rf dist server.js",
+    "splash": "bun scripts/generate-splash.mjs",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

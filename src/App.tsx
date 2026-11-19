@@ -17,6 +17,7 @@ import { WorkspaceScreen } from './components/WorkspaceScreen';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { ExportModal } from './components/ExportModal';
 import { ErrorToast } from './components/ErrorToast';
+import { SWUpdateToast } from './components/SWUpdateToast';
 import { useVisualViewport } from './hooks/useVisualViewport';
 
 const STORAGE_PROJECTS_KEY = 'ideaforge_projects_v1';
@@ -288,6 +289,8 @@ export default function App() {
           project={activeProject}
         />
       )}
+
+      <SWUpdateToast />
 
       <ErrorToast
         message={activeProject ? refineError : generateError}
