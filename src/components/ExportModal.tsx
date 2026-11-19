@@ -54,7 +54,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, proje
 
   return (
     <div
-      className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
+      className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 pt-[max(16px,env(safe-area-inset-top))] pb-[max(16px,env(safe-area-inset-bottom))] backdrop-blur-xs"
       role="dialog"
       aria-modal="true"
       aria-labelledby="export-modal-title"
