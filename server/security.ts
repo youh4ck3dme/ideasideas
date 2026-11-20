@@ -3,7 +3,7 @@ import type { Express } from 'express';
 export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   // 'sha256-…' = hash inline theme-init skriptu v index.html ( zabráni flashu dark módu)
-  "script-src 'self' 'sha256-xdtEP03zA3u1ViIOVbBVrZP8ypFC0R/9JiNGKBPxO2U='",
+  "script-src 'self' 'sha256-XUdPHdp71Y1u447WIS8XkXqjLbqcTZyX4JzgjJ1ixnI='",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   'img-src \'self\' data: blob:',
@@ -11,8 +11,9 @@ export const CONTENT_SECURITY_POLICY = [
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "base-uri 'self'",
-  "frame-ancestors 'none'",
   "form-action 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
 ].join('; ');
 
 export function applySecurity(app: Express): void {
