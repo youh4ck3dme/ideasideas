@@ -99,7 +99,7 @@ export const RoadmapTab: React.FC<RoadmapTabProps> = ({ data, onToggleItem }) =>
                       <span
                         className={`text-sm leading-relaxed transition-colors ${
                           item.done
-                            ? 'text-[#71717A] line-through dark:text-[#71717A]'
+                            ? 'text-[#52525B] line-through dark:text-[#A1A1AA]'
                             : 'text-[#111827] dark:text-[#E4E4E7]'
                         }`}
                       >

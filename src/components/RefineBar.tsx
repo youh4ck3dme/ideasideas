@@ -41,7 +41,7 @@ export const RefineBar: React.FC<RefineBarProps> = ({
   return (
     <section
       aria-label={`Upraviť sekciu ${tabLabel}`}
-      className="no-print mt-10 rounded-2xl border border-[#E5E7EB] bg-white p-4 dark:border-[#27272A] dark:bg-[#111113]"
+      className="no-print mt-8 w-full min-w-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 dark:border-[#27272A] dark:bg-[#111113]"
     >
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
         <p className="text-xs font-medium text-[#52525B] dark:text-[#A1A1AA]">
@@ -76,7 +76,7 @@ export const RefineBar: React.FC<RefineBarProps> = ({
           disabled={isRefining}
           placeholder="Upraviť alebo rozpracovať túto sekciu..."
           aria-label="Upraviť alebo rozpracovať túto sekciu"
-          className="h-11 min-w-0 flex-1 rounded-full border border-[#E5E7EB] bg-[#FAFAFA] px-4 text-base text-[#111827] placeholder-[#71717A] focus:border-[#2563EB] focus:bg-white focus:outline-hidden disabled:opacity-60 dark:border-[#27272A] dark:bg-[#09090B] dark:text-[#F4F4F5] dark:placeholder-[#71717A] dark:focus:border-[#3B82F6] sm:text-sm"
+          className="h-11 min-w-0 flex-1 rounded-full border border-[#E5E7EB] bg-[#FAFAFA] px-4 text-base text-[#111827] placeholder-[#52525B] focus:border-[#2563EB] focus:bg-white focus:outline-hidden disabled:opacity-60 dark:border-[#27272A] dark:bg-[#09090B] dark:text-[#F4F4F5] dark:placeholder-[#A1A1AA] dark:focus:border-[#3B82F6] sm:text-sm"
         />
         <button
           type="submit"

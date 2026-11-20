@@ -105,7 +105,7 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
     const currentStep = ARCHITECTING_STEPS[activeStepIndex] ?? ARCHITECTING_STEPS[0];
 
     return (
-      <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col justify-center px-4 py-8 sm:px-6">
+      <div className="screen-center">
         <div
           role="status"
           aria-live="polite"
@@ -129,15 +129,15 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
             </span>
           </div>
 
-          <div
-            aria-label="Priebeh generovania návrhu"
-            className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[#F4F4F5] dark:bg-[#27272A]"
-          >
             <div
-              className="h-full rounded-full bg-[#2563EB] transition-[width] duration-500 dark:bg-[#3B82F6]"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
+              aria-label="Priebeh generovania návrhu"
+              className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[#F4F4F5] dark:bg-[#27272A]"
+            >
+              <div
+                className="h-full w-full origin-left rounded-full bg-[#2563EB] transition-transform duration-500 ease-out will-change-transform dark:bg-[#3B82F6]"
+                style={{ transform: `scaleX(${progressPercent / 100})` }}
+              />
+            </div>
 
           <p className="mt-3 text-xs text-[#52525B] dark:text-[#A1A1AA]">
             Práve spracúvam: <span className="font-medium text-[#111827] dark:text-[#F4F4F5]">{currentStep.detail}</span>
@@ -159,7 +159,7 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
                     >
                       {step.title}
                     </p>
-                    <p className="mt-0.5 truncate text-xs text-[#71717A] dark:text-[#71717A]">
+                    <p className="mt-0.5 truncate text-xs text-[#52525B] dark:text-[#A1A1AA]">
                       {step.detail}
                     </p>
                   </div>
@@ -187,7 +187,7 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
   const displayedError = validationError || error;
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col justify-center px-4 py-8 sm:px-6 sm:py-12">
+    <div className="screen-center">
       {/* Hero Heading */}
       <div className="mb-6 sm:mb-8">
         <p className="text-xs font-medium tracking-wide text-[#2563EB] dark:text-[#3B82F6]">
@@ -225,7 +225,7 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
               }, 150);
             }}
             placeholder="Opíš svoj nápad na produkt, službu alebo aplikáciu..."
-            className="w-full resize-none bg-transparent text-base leading-relaxed text-[#111827] placeholder-[#71717A] focus:outline-hidden dark:text-[#F4F4F5] dark:placeholder-[#71717A]"
+            className="w-full resize-none bg-transparent text-base leading-relaxed text-[#111827] placeholder-[#52525B] focus:outline-hidden dark:text-[#F4F4F5] dark:placeholder-[#A1A1AA]"
           />
 
           {/* Collapsible Context Toggle */}
@@ -269,7 +269,7 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
                       }, 150);
                     }}
                     placeholder="Napr. slovenskí živnostníci, lokálne kaviarne, rodičia..."
-                    className="mt-1.5 h-10 w-full rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-3 text-base text-[#111827] placeholder-[#71717A] focus:border-[#2563EB] focus:bg-white focus:outline-hidden dark:border-[#27272A] dark:bg-[#09090B] dark:text-[#F4F4F5] dark:focus:border-[#3B82F6] sm:text-sm"
+                    className="mt-1.5 h-10 w-full min-w-0 rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-3 text-base text-[#111827] placeholder-[#52525B] focus:border-[#2563EB] focus:bg-white focus:outline-hidden dark:border-[#27272A] dark:bg-[#09090B] dark:text-[#F4F4F5] dark:placeholder-[#A1A1AA] dark:focus:border-[#3B82F6] sm:text-sm"
                   />
                 </div>
 
@@ -327,7 +327,7 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
 
         {/* Bottom Submit Strip */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E5E7EB] bg-[#FAFAFA] px-4 py-3 rounded-b-2xl dark:border-[#27272A] dark:bg-[#18181B]/60 sm:px-5">
-          <span className="font-mono text-xs tabular-nums text-[#71717A]">
+          <span className="font-mono text-xs tabular-nums text-[#52525B] dark:text-[#A1A1AA]">
             {idea.trim().length} / 2500 znakov
           </span>
 
@@ -362,7 +362,7 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
               key={example.label}
               type="button"
               onClick={() => handleSelectExample(idx)}
-              className="inline-flex h-10 items-center rounded-full border border-[#E5E7EB] bg-white px-4 text-xs font-medium text-[#111827] transition-transform hover:border-[#2563EB]/50 hover:bg-[#F4F4F5] active:scale-[0.98] dark:border-[#27272A] dark:bg-[#111113] dark:text-[#F4F4F5] dark:hover:border-[#3B82F6]/50 dark:hover:bg-[#18181B] whitespace-nowrap shrink-0"
+              className="inline-flex h-10 max-w-full items-center rounded-full border border-[#E5E7EB] bg-white px-4 text-xs font-medium text-[#111827] transition-transform hover:border-[#2563EB]/50 hover:bg-[#F4F4F5] active:scale-[0.98] dark:border-[#27272A] dark:bg-[#111113] dark:text-[#F4F4F5] dark:hover:border-[#3B82F6]/50 dark:hover:bg-[#18181B]"
             >
               {example.label}
             </button>

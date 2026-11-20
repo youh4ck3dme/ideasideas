@@ -27,17 +27,16 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
 }) => {
   const { t, locale, setLocale } = useI18n();
   return (
-    <header className="no-print shrink-0 border-b border-[#E5E7EB] bg-white/90 px-3 pt-[max(env(safe-area-inset-top),12px)] backdrop-blur-md dark:border-[#27272A] dark:bg-[#09090B]/90 sm:px-6">
-      <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-3">
-        {/* Left Zone: History + Brand Wordmark */}
-        <div className="flex items-center gap-2 shrink-0">
+    <header className="no-print shrink-0 overflow-hidden border-b border-[#E5E7EB] bg-white/90 px-3 pt-[max(env(safe-area-inset-top),12px)] backdrop-blur-md dark:border-[#27272A] dark:bg-[#09090B]/90 sm:px-6">
+      <div className="mx-auto flex h-12 max-w-[1120px] min-w-0 items-center gap-1.5 sm:h-14 sm:gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 md:flex-none">
           <button
             type="button"
             onClick={onOpenHistory}
             aria-label={`${t('appbar.historyAria')} (${historyCount})`}
-            className="inline-flex h-10 min-w-[40px] items-center justify-center gap-1.5 rounded-full border border-[#E5E7EB] bg-[#FAFAFA] px-3 text-xs font-medium text-[#111827] transition-transform hover:bg-[#F4F4F5] active:scale-[0.98] dark:border-[#27272A] dark:bg-[#111113] dark:text-[#F4F4F5] dark:hover:bg-[#18181B] whitespace-nowrap shrink-0"
+            className="inline-flex h-10 min-w-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#E5E7EB] bg-[#FAFAFA] px-2.5 text-xs font-medium text-[#111827] transition-transform hover:bg-[#F4F4F5] active:scale-[0.98] dark:border-[#27272A] dark:bg-[#111113] dark:text-[#F4F4F5] dark:hover:bg-[#18181B]"
           >
-            <FolderOpen className="h-4 w-4 text-[#52525B] dark:text-[#A1A1AA]" />
+            <FolderOpen className="h-4 w-4 shrink-0 text-[#52525B] dark:text-[#A1A1AA]" />
             <span className="hidden sm:inline">{t('appbar.projects')}</span>
             <span className="font-mono text-[11px] tabular-nums text-[#52525B] dark:text-[#A1A1AA]">
               {historyCount}
@@ -47,7 +46,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
           <button
             type="button"
             onClick={onGoHome}
-            className="inline-flex h-10 items-center gap-2 rounded-lg px-2 text-base font-bold tracking-tight text-[#111827] transition-opacity hover:opacity-80 dark:text-[#F4F4F5] whitespace-nowrap shrink-0"
+            className="inline-flex h-10 min-w-0 items-center gap-2 rounded-lg px-1 text-base font-bold tracking-tight text-[#111827] transition-opacity hover:opacity-80 dark:text-[#F4F4F5]"
           >
             <svg
               className="h-5 w-5 shrink-0"
@@ -68,11 +67,10 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
                 strokeLinecap="round"
               />
             </svg>
-            <span>IdeaForge</span>
+            <span className="truncate">IdeaForge</span>
           </button>
         </div>
 
-        {/* Center Zone: Active Project Name on Desktop */}
         <div className="hidden min-w-0 flex-1 justify-center md:flex">
           {isWorkspace && projectTitle && (
             <span className="max-w-xs truncate text-sm font-medium text-[#52525B] dark:text-[#A1A1AA]">
@@ -81,8 +79,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
           )}
         </div>
 
-        {/* Right Zone: PWA Install, Theme Toggle, Workspace Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <PWAInstallChip />
 
           {isWorkspace && (

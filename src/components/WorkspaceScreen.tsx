@@ -80,7 +80,7 @@ export const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       {/* Main Interactive Workspace (Screen + Print Hidden Wrapper) */}
-      <div className="no-print mx-auto flex min-h-0 w-full max-w-[1120px] flex-1 overflow-hidden">
+      <div className="no-print mx-auto flex min-h-0 w-full min-w-0 max-w-[1120px] flex-1 overflow-hidden">
         {/* Desktop Left Navigation Rail (>= 768px) */}
         <aside
           aria-label="Sekcie projektu"
@@ -122,7 +122,7 @@ export const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
           </nav>
 
           <div className="mt-auto border-t border-[#E5E7EB] px-3 pt-4 dark:border-[#27272A]">
-            <p className="text-[11px] font-medium text-[#71717A]">Cieľová skupina</p>
+            <p className="text-[11px] font-medium text-[#52525B] dark:text-[#A1A1AA]">Cieľová skupina</p>
             <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-[#52525B] dark:text-[#A1A1AA]">
               {project.input.targetAudience || 'Široká verejnosť'}
             </p>
@@ -134,8 +134,8 @@ export const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
           ref={mainScrollRef}
           role="tabpanel"
           aria-label={activeTabMeta.label}
-          className={`app-scroll-viewport custom-scrollbar min-w-0 scroll-pb-24 px-4 pt-6 sm:px-8 sm:py-8 md:scroll-pb-8 md:pb-8 ${
-            isKeyboardOpen ? 'pb-6' : 'pb-[calc(76px+env(safe-area-inset-bottom))]'
+          className={`app-scroll-viewport custom-scrollbar min-w-0 w-full max-w-full scroll-pb-28 px-4 pt-5 sm:px-8 sm:py-8 md:scroll-pb-8 md:pb-8 ${
+            isKeyboardOpen ? 'pb-6' : 'pb-[calc(80px+env(safe-area-inset-bottom))]'
           }`}
         >
           {activeTab === 'promo' && <PromoTab data={project.blueprint.promo} />}
@@ -166,7 +166,7 @@ export const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
       <nav
         aria-label="Hlavná navigácia sekcií"
         role="tablist"
-        className={`no-print fixed bottom-0 left-0 right-0 z-30 grid h-[calc(64px+env(safe-area-inset-bottom))] grid-cols-5 items-center border-t border-[#E5E7EB] bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-md dark:border-[#27272A] dark:bg-[#09090B]/95 md:hidden ${
+        className={`no-print fixed bottom-0 left-0 right-0 z-30 grid h-[calc(64px+env(safe-area-inset-bottom))] w-full max-w-full grid-cols-5 items-stretch overflow-hidden border-t border-[#E5E7EB] bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-md dark:border-[#27272A] dark:bg-[#09090B]/95 md:hidden ${
           isKeyboardOpen ? 'hidden' : ''
         }`}
       >
@@ -181,14 +181,14 @@ export const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
               aria-selected={isSelected}
               aria-label={tab.label}
               onClick={() => onSelectTab(tab.key)}
-              className={`flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 transition-transform active:scale-[0.96] ${
+              className={`flex min-h-[44px] min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl px-0.5 py-1.5 transition-transform active:scale-[0.96] ${
                 isSelected
                   ? 'text-[#2563EB] dark:text-[#3B82F6]'
                   : 'text-[#52525B] dark:text-[#A1A1AA]'
               }`}
             >
               <Icon className="h-5 w-5 shrink-0" />
-              <span className="text-[10px] font-medium leading-none tracking-tight whitespace-nowrap">
+              <span className="max-w-full truncate px-0.5 text-[10px] font-medium leading-none tracking-tight">
                 {tab.mobileLabel}
               </span>
             </button>

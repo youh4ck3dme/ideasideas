@@ -35,9 +35,11 @@
     height: 100dvh;
     max-height: 100dvh;
     width: 100%;
+    max-width: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
+    overflow-x: clip;
     overscroll-behavior: none;
     overscroll-behavior-y: none;
     touch-action: pan-y;
@@ -53,10 +55,46 @@
 .app-scroll-viewport {
   flex: 1 1 0%;
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  scroll-behavior: auto;
+}
+
+/* Sekcie ostávajú v šírke obrazovky. Dlhý text sa láme, nepretiekne cez border. */
+.app-scroll-viewport :where(section, form, article),
+.screen-center :where(section, form, article) {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.app-scroll-viewport :where(p, h1, h2, h3, h4, li, figcaption, dd, blockquote),
+.screen-center :where(p, h1, h2, h3, h4, li) {
+  overflow-wrap: anywhere;
+}
+
+/* Jedna obrazovka: obsah sa vertikálne centruje, ale pri pretečení sa dá doscrollovať na začiatok. */
+.screen-center {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 42rem;
+  min-height: 100%;
+  margin-inline: auto;
+  flex-direction: column;
+  justify-content: safe center;
+  padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 640px) {
+  .screen-center {
+    padding: 48px 24px calc(32px + env(safe-area-inset-bottom));
+  }
 }
 
 /* Hide scrollbars on touch devices for a clean native-app look (desktop keeps the subtle scrollbar) */

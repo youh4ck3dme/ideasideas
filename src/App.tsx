@@ -279,7 +279,7 @@ export default function App() {
           ? { height: `${keyboardViewportHeight}px`, maxHeight: `${keyboardViewportHeight}px` }
           : undefined
       }
-      className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-[#FAFAFA] text-[#111827] dark:bg-[#09090B] dark:text-[#F4F4F5]"
+      className="flex h-[100dvh] max-h-[100dvh] w-full max-w-full min-w-0 flex-col overflow-hidden bg-[#FAFAFA] text-[#111827] dark:bg-[#09090B] dark:text-[#F4F4F5]"
     >
       <TopAppBar
         theme={theme}
@@ -319,7 +319,7 @@ export default function App() {
           isKeyboardOpen={isKeyboardOpen}
         />
       ) : (
-        <main className="app-scroll-viewport custom-scrollbar pb-[calc(24px+env(safe-area-inset-bottom))]">
+        <main className="app-scroll-viewport custom-scrollbar">
           <IdeaCaptureScreen
             isGenerating={isGenerating}
             error={generateError}

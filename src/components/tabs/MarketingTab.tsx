@@ -94,7 +94,7 @@ export const MarketingTab: React.FC<MarketingTabProps> = ({ data, onToggleTask }
                   <p
                     className={`mt-0.5 text-sm leading-relaxed ${
                       item.done
-                        ? 'text-[#71717A] line-through'
+                        ? 'text-[#52525B] line-through dark:text-[#A1A1AA]'
                         : 'text-[#111827] dark:text-[#E4E4E7]'
                     }`}
                   >

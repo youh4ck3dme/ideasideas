@@ -22,7 +22,7 @@ export const PromoTab: React.FC<PromoTabProps> = ({ data }) => {
   return (
     <div className="space-y-8">
       {/* Brand Summary */}
-      <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 dark:border-[#27272A] dark:bg-[#111113]">
+      <section className="min-w-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 dark:border-[#27272A] dark:bg-[#111113] sm:p-6">
         <p className="text-xs font-medium text-[#2563EB] dark:text-[#3B82F6]">
           Koncept & Identita značky
         </p>
@@ -54,7 +54,7 @@ export const PromoTab: React.FC<PromoTabProps> = ({ data }) => {
       </section>
 
       {/* Hero Copy Preview */}
-      <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 dark:border-[#27272A] dark:bg-[#111113]">
+      <section className="min-w-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 dark:border-[#27272A] dark:bg-[#111113] sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-[#111827] dark:text-[#F4F4F5]">
             Texty pre hlavnú sekciu webu (Hero)
@@ -137,7 +137,7 @@ export const PromoTab: React.FC<PromoTabProps> = ({ data }) => {
       </section>
 
       {/* Brand Direction: Tone of Voice + 3-color Palette */}
-      <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 dark:border-[#27272A] dark:bg-[#111113]">
+      <section className="min-w-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 dark:border-[#27272A] dark:bg-[#111113] sm:p-6">
         <h3 className="text-sm font-semibold text-[#111827] dark:text-[#F4F4F5]">
           Smerovanie značky a farebná paleta
         </h3>

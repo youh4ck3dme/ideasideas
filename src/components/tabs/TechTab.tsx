@@ -69,7 +69,7 @@ export const TechTab: React.FC<TechTabProps> = ({ data }) => {
                         {field.name}
                       </span>
                       {field.note && (
-                        <span className="ml-1.5 font-sans text-[11px] text-[#71717A]">
+                        <span className="ml-1.5 font-sans text-[11px] text-[#52525B] dark:text-[#A1A1AA]">
                           ({field.note})
                         </span>
                       )}
