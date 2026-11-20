@@ -94,6 +94,36 @@
   }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  button,
+  a,
+  [role='tab'] {
+    transition-property: transform, opacity;
+    transition-duration: 120ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .bar-fill {
+    height: 100%;
+    width: 100%;
+    transform-origin: left center;
+    transition: transform 280ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .sheet-in {
+    animation: sheet-in 180ms cubic-bezier(0.2, 0, 0, 1);
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translate3d(-12%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 /* Hide scrollbars on touch devices for a clean native-app look (desktop keeps the subtle scrollbar) */
 @media (pointer: coarse) {
   .custom-scrollbar {

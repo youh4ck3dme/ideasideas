@@ -134,7 +134,7 @@ export const IdeaCaptureScreen: React.FC<IdeaCaptureScreenProps> = ({
               className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[#F4F4F5] dark:bg-[#27272A]"
             >
               <div
-                className="h-full w-full origin-left rounded-full bg-[#2563EB] transition-transform duration-500 ease-out will-change-transform dark:bg-[#3B82F6]"
+                className="bar-fill rounded-full bg-[#2563EB] dark:bg-[#3B82F6]"
                 style={{ transform: `scaleX(${progressPercent / 100})` }}
               />
             </div>

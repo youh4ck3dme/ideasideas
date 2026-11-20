@@ -166,7 +166,7 @@ export const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
       <nav
         aria-label="Hlavná navigácia sekcií"
         role="tablist"
-        className={`no-print fixed bottom-0 left-0 right-0 z-30 grid h-[calc(64px+env(safe-area-inset-bottom))] w-full max-w-full grid-cols-5 items-stretch overflow-hidden border-t border-[#E5E7EB] bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-md dark:border-[#27272A] dark:bg-[#09090B]/95 md:hidden ${
+        className={`no-print fixed bottom-0 left-0 right-0 z-30 grid h-[calc(64px+env(safe-area-inset-bottom))] w-full max-w-full grid-cols-5 items-stretch overflow-hidden border-t border-[#E5E7EB] bg-[#FAFAFA] px-1 pb-[env(safe-area-inset-bottom)] dark:border-[#27272A] dark:bg-[#09090B] md:hidden ${
           isKeyboardOpen ? 'hidden' : ''
         }`}
       >

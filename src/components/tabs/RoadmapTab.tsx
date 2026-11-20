@@ -43,8 +43,8 @@ export const RoadmapTab: React.FC<RoadmapTabProps> = ({ data, onToggleItem }) =>
           aria-label="Celkový postup realizácie"
         >
           <div
-            className="h-full rounded-full bg-[#2563EB] transition-all duration-300"
-            style={{ width: `${overall.percentage}%` }}
+            className="bar-fill rounded-full bg-[#2563EB] dark:bg-[#3B82F6]"
+            style={{ transform: `scaleX(${Math.max(0, Math.min(100, overall.percentage)) / 100})` }}
           />
         </div>
       </section>

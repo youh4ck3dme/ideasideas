@@ -27,7 +27,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
 }) => {
   const { t, locale, setLocale } = useI18n();
   return (
-    <header className="no-print shrink-0 overflow-hidden border-b border-[#E5E7EB] bg-white/90 px-3 pt-[max(env(safe-area-inset-top),12px)] backdrop-blur-md dark:border-[#27272A] dark:bg-[#09090B]/90 sm:px-6">
+    <header className="no-print shrink-0 overflow-hidden border-b border-[#E5E7EB] bg-[#FAFAFA] px-3 pt-[max(env(safe-area-inset-top),12px)] dark:border-[#27272A] dark:bg-[#09090B] sm:px-6">
       <div className="mx-auto flex h-12 max-w-[1120px] min-w-0 items-center gap-1.5 sm:h-14 sm:gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-1.5 md:flex-none">
           <button
