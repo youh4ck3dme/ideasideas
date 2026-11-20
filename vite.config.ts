@@ -4,12 +4,17 @@ import fs from 'fs';
 import path from 'path';
 import {defineConfig} from 'vite';
 import {VitePWA} from 'vite-plugin-pwa';
+import {visualizer} from 'rollup-plugin-visualizer';
 
 export default defineConfig(() => {
   return {
     plugins: [
       react(),
       tailwindcss(),
+      // Bundle analýza: ANALYZE=1 bun run build → dist/stats.html (+ stats.json)
+      ...(process.env.ANALYZE === '1'
+        ? [visualizer({ open: false, filename: 'dist/stats.html', gzipSize: true, brotliSize: true, json: true })]
+        : []),
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['icon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],

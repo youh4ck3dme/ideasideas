@@ -21,6 +21,7 @@ import { ErrorToast } from './components/ErrorToast';
 import { SWUpdateToast } from './components/SWUpdateToast';
 import { useVisualViewport } from './hooks/useVisualViewport';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { trackEvent } from './utils/metrics';
 import {
   enqueuePendingGeneration,
   getPendingGenerations,
@@ -119,6 +120,8 @@ export default function App() {
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
 
   const runGenerate = async (input: IdeaContextInput): Promise<boolean> => {
+    const startedAt = Date.now();
+    trackEvent('generate_started');
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -135,6 +138,7 @@ export default function App() {
       setActiveTab('promo');
       setRefineError(null);
       setLastFailedGenerateInput(null);
+      trackEvent('generate_success', { durationMs: Date.now() - startedAt });
       return true;
     } catch (err) {
       // Sieťová chyba / offline → nápad uložiť do fronty a odoslať pri obnovení pripojenia
@@ -142,6 +146,7 @@ export default function App() {
         enqueuePendingGeneration(input);
         setPendingCount(getPendingGenerations().length);
       }
+      trackEvent('generate_failed', { durationMs: Date.now() - startedAt });
       setLastFailedGenerateInput(input);
       setGenerateError(
         err instanceof Error ? err.message : 'Pri komunikácii so serverom nastala chyba.'
@@ -184,6 +189,7 @@ export default function App() {
 
   const handleRefineSection = async (tabKey: WorkspaceTabKey, instruction: string) => {
     if (!activeProject) return;
+    trackEvent('refine_started', { tabKey });
     setIsRefining(true);
     setRefineError(null);
     try {
@@ -203,7 +209,9 @@ export default function App() {
       const updatedProject = updateBlueprintSection(activeProject, tabKey, payload.sectionData);
       setProjects((prev) => upsertProjectInHistory(prev, updatedProject));
       setLastFailedRefine(null);
+      trackEvent('refine_success', { tabKey });
     } catch (err) {
+      trackEvent('refine_failed', { tabKey });
       setLastFailedRefine({ tabKey, instruction });
       setRefineError(
         err instanceof Error ? err.message : 'Pri úprave sekcie nastala neočakávaná chyba.'
@@ -234,6 +242,11 @@ export default function App() {
     if (activeProjectId === id) {
       setActiveProjectId(null);
     }
+  };
+
+  const handleOpenHistory = () => {
+    trackEvent('history_opened');
+    setIsHistoryOpen(true);
   };
 
   const handleSelectProject = (id: string) => {
@@ -271,12 +284,15 @@ export default function App() {
       <TopAppBar
         theme={theme}
         onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-        onOpenHistory={() => setIsHistoryOpen(true)}
+        onOpenHistory={handleOpenHistory}
         onGoHome={handleGoHome}
         projectTitle={activeProject?.title}
         historyCount={projects.length}
         isWorkspace={Boolean(activeProject)}
-        onOpenExport={() => setIsExportOpen(true)}
+        onOpenExport={() => {
+          trackEvent('export_opened');
+          setIsExportOpen(true);
+        }}
       />
 
       <OfflineBanner pendingCount={pendingCount} />

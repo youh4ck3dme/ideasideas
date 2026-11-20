@@ -271,3 +271,34 @@ test('POST /api/log má rate limit (429 po limite)', async () => {
     await stopApiApp(ctx);
   }
 });
+
+test('POST /api/metrics: validný event 200, neznámy 400, nad limit 429', async () => {
+  const ctx = await startApiApp({
+    aiClientFactory: () => createMockAiClient(),
+    rateLimit: { generate: 100, refine: 100, metrics: 3, windowMs: 60_000 },
+  });
+  try {
+    const headers = { 'Content-Type': 'application/json', 'X-Forwarded-For': '10.89.0.1' };
+    const ok = await fetch(`${ctx.baseUrl}/api/metrics`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ event: 'generate_success', props: { durationMs: 1200, tabKey: 'promo' } }),
+    });
+    assert.equal(ok.status, 200);
+
+    const bad = await fetch(`${ctx.baseUrl}/api/metrics`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ event: 'nieco_zle', props: {} }),
+    });
+    assert.equal(bad.status, 400);
+
+    // pozn.: aj 400 odpoveď ráta do rate limitu (kontrola prebieha pred validáciou)
+    const r2 = await fetch(`${ctx.baseUrl}/api/metrics`, { method: 'POST', headers, body: JSON.stringify({ event: 'app_open' }) });
+    const r3 = await fetch(`${ctx.baseUrl}/api/metrics`, { method: 'POST', headers, body: JSON.stringify({ event: 'app_open' }) });
+    assert.equal(r2.status, 200);
+    assert.equal(r3.status, 429);
+  } finally {
+    await stopApiApp(ctx);
+  }
+});

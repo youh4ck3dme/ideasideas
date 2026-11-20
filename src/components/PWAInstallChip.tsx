@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Share, X } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { trackEvent } from '../utils/metrics';
 
 export const PWAInstallChip: React.FC = () => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
@@ -23,7 +24,10 @@ export const PWAInstallChip: React.FC = () => {
     return (
       <button
         type="button"
-        onClick={install}
+        onClick={() => {
+          trackEvent('pwa_install_clicked');
+          void install();
+        }}
         aria-label="Nainštalovať apku"
         className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3 text-xs font-medium text-[#111827] transition-transform hover:bg-[#F4F4F5] active:scale-[0.98] dark:border-[#27272A] dark:bg-[#18181B] dark:text-[#F4F4F5] dark:hover:bg-[#27272A] whitespace-nowrap shrink-0"
       >

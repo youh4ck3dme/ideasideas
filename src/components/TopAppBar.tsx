@@ -2,6 +2,7 @@ import React from 'react';
 import { Download, FolderOpen, Globe, Moon, Plus, Sun } from 'lucide-react';
 import { PWAInstallChip } from './PWAInstallChip';
 import { useI18n } from '../i18n';
+import { trackEvent } from '../utils/metrics';
 
 interface TopAppBarProps {
   theme: 'light' | 'dark';
@@ -110,7 +111,11 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
 
           <button
             type="button"
-            onClick={() => setLocale(locale === 'sk' ? 'en' : 'sk')}
+            onClick={() => {
+              const next = locale === 'sk' ? 'en' : 'sk';
+              trackEvent('locale_changed', { locale: next });
+              setLocale(next);
+            }}
             aria-label={t('appbar.langAria')}
             className="inline-flex h-10 items-center gap-1 rounded-full border border-[#E5E7EB] bg-white px-2.5 text-[#52525B] transition-colors hover:bg-[#F4F4F5] dark:border-[#27272A] dark:bg-[#18181B] dark:text-[#A1A1AA] dark:hover:bg-[#27272A] shrink-0"
           >
@@ -120,7 +125,10 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
 
           <button
             type="button"
-            onClick={onToggleTheme}
+            onClick={() => {
+              trackEvent('theme_changed', { theme: theme === 'dark' ? 'light' : 'dark' });
+              onToggleTheme();
+            }}
             aria-label={theme === 'dark' ? t('appbar.themeToLight') : t('appbar.themeToDark')}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-[#52525B] transition-transform hover:bg-[#F4F4F5] hover:text-[#111827] active:scale-[0.96] dark:border-[#27272A] dark:bg-[#18181B] dark:text-[#A1A1AA] dark:hover:bg-[#27272A] dark:hover:text-[#F4F4F5] shrink-0"
           >

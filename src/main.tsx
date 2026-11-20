@@ -3,9 +3,11 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App.tsx';
 import { I18nProvider } from './i18n';
 import { initErrorReporting } from './utils/errorReporting';
+import { trackEvent } from './utils/metrics';
 import './index.css';
 
 initErrorReporting();
+trackEvent('app_open');
 
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   registerSW({
