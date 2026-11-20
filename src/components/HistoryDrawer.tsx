@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Check, Download, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import type { SavedProject } from '../types/project';
-import { formatSlovakDate } from '../utils/projectLogic';
+import { formatSlovakDate, parseProjectsBackup, serializeProjectsBackup } from '../utils/projectLogic';
+import { useI18n } from '../i18n';
 
 interface HistoryDrawerProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface HistoryDrawerProps {
   onRenameProject: (id: string, newTitle: string) => void;
   onDeleteProject: (id: string) => void;
   onCreateNew: () => void;
+  onImportProjects: (projects: SavedProject[]) => void;
 }
 
 export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
@@ -23,9 +25,52 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
   onRenameProject,
   onDeleteProject,
   onCreateNew,
+  onImportProjects,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
+  const [importFeedback, setImportFeedback] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const { t } = useI18n();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
+  const handleExportAll = () => {
+    const blob = new Blob([serializeProjectsBackup(projects)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ideaforge-zaloha-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const raw = await file.text();
+    const result = parseProjectsBackup(raw);
+    if ('error' in result) {
+      setImportFeedback(result.error);
+      return;
+    }
+    onImportProjects(result.projects);
+    setImportFeedback(
+      result.projects.length > 0
+        ? `Importované projekty: ${result.projects.length}`
+        : 'Záloha neobsahuje žiadne projekty.'
+    );
+  };
 
   if (!isOpen) return null;
 
@@ -56,12 +101,12 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         {/* Drawer Header */}
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#E5E7EB] px-4 dark:border-[#27272A]">
           <h2 className="text-sm font-semibold text-[#111827] dark:text-[#F4F4F5]">
-            Uložené projekty ({projects.length})
+            {t('history.title', { count: projects.length })}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Zavrieť históriu projektov"
+            aria-label={t('history.closeAria')}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#52525B] transition-transform hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:bg-[#27272A]"
           >
             <X className="h-4 w-4" />
@@ -81,6 +126,38 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
             <Plus className="h-4 w-4" />
             <span>Nový produktový nápad</span>
           </button>
+
+          <div className="mt-2.5 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportAll}
+              className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3 text-xs font-medium text-[#52525B] transition-colors hover:bg-[#F4F4F5] hover:text-[#111827] dark:border-[#27272A] dark:bg-[#18181B] dark:text-[#A1A1AA] dark:hover:bg-[#27272A] dark:hover:text-[#F4F4F5]"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>{t('history.backup')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3 text-xs font-medium text-[#52525B] transition-colors hover:bg-[#F4F4F5] hover:text-[#111827] dark:border-[#27272A] dark:bg-[#18181B] dark:text-[#A1A1AA] dark:hover:bg-[#27272A] dark:hover:text-[#F4F4F5]"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              <span>{t('history.import')}</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              aria-label={t('history.importAria')}
+              onChange={handleImportFile}
+            />
+          </div>
+          {importFeedback && (
+            <p role="status" className="mt-2 text-xs text-[#52525B] dark:text-[#A1A1AA]">
+              {importFeedback}
+            </p>
+          )}
         </div>
 
         {/* Saved Projects List */}
@@ -88,10 +165,10 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
           {projects.length === 0 ? (
             <div className="px-4 py-12 text-center">
               <p className="text-sm font-medium text-[#111827] dark:text-[#F4F4F5]">
-                Zatiaľ nemáte žiadne uložené projekty
+                {t('history.emptyTitle')}
               </p>
               <p className="mt-1 text-xs text-[#52525B] dark:text-[#A1A1AA]">
-                Všetky vygenerované nápady sa sem automaticky uložia.
+                {t('history.emptyHint')}
               </p>
             </div>
           ) : (

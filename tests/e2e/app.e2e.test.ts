@@ -94,6 +94,7 @@ async function createHarness(): Promise<Harness> {
   const React = await import('react');
   const { createRoot } = await import('react-dom/client');
   const { default: App } = await import('../../src/App.tsx');
+  const { I18nProvider } = await import('../../src/i18n/index.tsx');
 
   const container = window.document.createElement('div');
   window.document.body.appendChild(container);
@@ -101,7 +102,7 @@ async function createHarness(): Promise<Harness> {
   const act = React.act as (cb: () => Promise<void> | void) => Promise<void>;
 
   await act(async () => {
-    root.render(React.createElement(App));
+    root.render(React.createElement(I18nProvider, null, React.createElement(App)));
   });
 
   return { window, container, root, act, fetchCalls };
@@ -234,6 +235,149 @@ test('e2e: história projektov (drawer) a export modal fungujú', async () => {
     assert.ok(modalTitle, 'export modal otvorený');
     const pre = h.container.querySelector('pre');
     assert.ok(pre && (pre.textContent ?? '').length > 100, 'markdown náhľad v modal');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: Escape zavrie history drawer', async () => {
+  const h = await createHarness();
+  try {
+    const historyBtn = h.container.querySelector('button[aria-label^="Otvoriť históriu projektov"]')!;
+    await h.act(async () => click(h.window, historyBtn));
+    await flush(h);
+    assert.match(h.container.textContent ?? '', /Uložené projekty/);
+    await h.act(async () => {
+      h.window.dispatchEvent(new h.window.KeyboardEvent('keydown', { key: 'Escape' }));
+    });
+    await flush(h);
+    assert.ok(!/Uložené projekty/.test(h.container.textContent ?? ''), 'drawer sa zavrel po Escape');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: controllerchange zobrazí SW update toast', async () => {
+  const h = await createHarness();
+  try {
+    assert.ok(!/nová verzia aplikácie/i.test(h.container.textContent ?? ''), 'toast predtým skrytý');
+    await h.act(async () => {
+      h.window.dispatchEvent(new h.window.Event('controllerchange'));
+    });
+    await flush(h);
+    assert.match(h.container.textContent ?? '', /nová verzia aplikácie/i, 'toast sa zobrazil');
+    const reloadBtn = [...h.container.querySelectorAll('button')].find((b: any) =>
+      (b.textContent ?? '').includes('Obnoviť')
+    );
+    assert.ok(reloadBtn, 'tlačidlo Obnoviť existuje');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: history drawer má tlačidlá Záloha JSON / Import a import pridá projekt', async () => {
+  const h = await createHarness();
+  try {
+    const historyBtn = h.container.querySelector('button[aria-label^="Otvoriť históriu projektov"]')!;
+    await h.act(async () => click(h.window, historyBtn));
+    await flush(h);
+
+    const buttons = [...h.container.querySelectorAll('button')].map((b: any) => b.textContent ?? '');
+    assert.ok(buttons.some((t) => t.includes('Záloha JSON')), 'tlačidlo Záloha JSON');
+    assert.ok(buttons.some((t) => t.includes('Import')), 'tlačidlo Import');
+
+    const input = h.container.querySelector('input[type="file"]') as any;
+    assert.ok(input, 'file input existuje');
+    const backup = JSON.stringify({
+      format: 'ideaforge-projects-backup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      projects: [SAMPLE_PROJECT],
+    });
+    const file = new h.window.File([backup], 'zaloha.json', { type: 'application/json' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    await h.act(async () => {
+      input.dispatchEvent(new h.window.Event('change', { bubbles: true }));
+    });
+    await flush(h, 50);
+    assert.match(h.container.textContent ?? '', /Importované projekty: 1/, 'feedback po importe');
+    assert.match(h.container.textContent ?? '', new RegExp(SAMPLE_PROJECT.title.slice(0, 12)), 'projekt je v zozname');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: import neplatnej zálohy zobrazí chybu', async () => {
+  const h = await createHarness();
+  try {
+    const historyBtn = h.container.querySelector('button[aria-label^="Otvoriť históriu projektov"]')!;
+    await h.act(async () => click(h.window, historyBtn));
+    await flush(h);
+    const input = h.container.querySelector('input[type="file"]') as any;
+    const file = new h.window.File(['{zly json'], 'zaloha.json', { type: 'application/json' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    await h.act(async () => {
+      input.dispatchEvent(new h.window.Event('change', { bubbles: true }));
+    });
+    await flush(h, 50);
+    assert.match(h.container.textContent ?? '', /nie je platný JSON/, 'chyba importu viditeľná');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: offline zlyhanie uloží nápad do fronty a po online sa odošle', async () => {
+  const h = await createHarness();
+  try {
+    // simuluj offline + zlyhanie fetch
+    Object.defineProperty(h.window.navigator, 'onLine', { value: false, configurable: true });
+    await h.act(async () => {
+      h.window.dispatchEvent(new h.window.Event('offline'));
+    });
+    await flush(h);
+    const realFetch = (globalThis as any).fetch;
+    (globalThis as any).fetch = async (input: unknown) => {
+      if (String(input).includes('/api/generate')) throw new TypeError('fetch failed');
+      return realFetch(input);
+    };
+
+    const textarea = h.container.querySelector('#idea-prompt-input')!;
+    await h.act(async () => {
+      setInputValue(h.window, textarea, 'Offline nápad dostatočne dlhý na frontu');
+      h.container.querySelector('form')!.dispatchEvent(new h.window.Event('submit', { bubbles: true, cancelable: true }));
+    });
+    await flush(h, 50);
+
+    const { getPendingGenerations } = await import('../../src/utils/offlineQueue.ts');
+    assert.equal(getPendingGenerations().length, 1, 'nápad je uložený vo fronte');
+    assert.match(h.container.textContent ?? '', /Nepodarilo sa dokončiť požiadavku|chyba/i, 'chyba viditeľná');
+
+    // späť online + úspešný fetch → fronta sa spracuje
+    (globalThis as any).fetch = realFetch;
+    Object.defineProperty(h.window.navigator, 'onLine', { value: true, configurable: true });
+    await h.act(async () => {
+      h.window.dispatchEvent(new h.window.Event('online'));
+    });
+    await flush(h, 80);
+
+    assert.equal(getPendingGenerations().length, 0, 'fronta vyprázdnená po úspechu');
+    assert.ok(h.container.querySelectorAll('[role="tab"]').length >= 5, 'workspace sa zobrazil po odoslaní z fronty');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: prepínač jazyka SK/EN prepína chrome aplikácie', async () => {
+  const h = await createHarness();
+  try {
+    const langBtn = h.container.querySelector('button[aria-label*="language"]')!;
+    assert.ok(langBtn, 'jazykový prepínač existuje');
+    assert.match(h.container.textContent ?? '', /Projekty|Otvoriť históriu/, 'defaultne SK');
+    await h.act(async () => click(h.window, langBtn));
+    await flush(h);
+    const historyBtn = h.container.querySelector('button[aria-label^="Open project history"]');
+    assert.ok(historyBtn, 'po prepnutí na EN je aria-label anglicky');
+    assert.equal(h.window.localStorage.getItem('ideaforge_locale'), 'en', 'locale uložená');
   } finally {
     await h.act(async () => h.root.unmount());
   }

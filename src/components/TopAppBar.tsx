@@ -1,6 +1,8 @@
 import React from 'react';
-import { Download, FolderOpen, Moon, Plus, Sun } from 'lucide-react';
+import { Download, FolderOpen, Globe, Moon, Plus, Sun } from 'lucide-react';
 import { PWAInstallChip } from './PWAInstallChip';
+import { useI18n } from '../i18n';
+import { trackEvent } from '../utils/metrics';
 
 interface TopAppBarProps {
   theme: 'light' | 'dark';
@@ -23,6 +25,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
   isWorkspace,
   onOpenExport,
 }) => {
+  const { t, locale, setLocale } = useI18n();
   return (
     <header className="no-print shrink-0 border-b border-[#E5E7EB] bg-white/90 px-3 pt-[max(env(safe-area-inset-top),12px)] backdrop-blur-md dark:border-[#27272A] dark:bg-[#09090B]/90 sm:px-6">
       <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-3">
@@ -31,11 +34,11 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
           <button
             type="button"
             onClick={onOpenHistory}
-            aria-label={`Otvoriť históriu projektov (${historyCount})`}
+            aria-label={`${t('appbar.historyAria')} (${historyCount})`}
             className="inline-flex h-10 min-w-[40px] items-center justify-center gap-1.5 rounded-full border border-[#E5E7EB] bg-[#FAFAFA] px-3 text-xs font-medium text-[#111827] transition-transform hover:bg-[#F4F4F5] active:scale-[0.98] dark:border-[#27272A] dark:bg-[#111113] dark:text-[#F4F4F5] dark:hover:bg-[#18181B] whitespace-nowrap shrink-0"
           >
             <FolderOpen className="h-4 w-4 text-[#52525B] dark:text-[#A1A1AA]" />
-            <span className="hidden sm:inline">Projekty</span>
+            <span className="hidden sm:inline">{t('appbar.projects')}</span>
             <span className="font-mono text-[11px] tabular-nums text-[#52525B] dark:text-[#A1A1AA]">
               {historyCount}
             </span>
@@ -87,29 +90,46 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
               <button
                 type="button"
                 onClick={onOpenExport}
-                aria-label="Exportovať projekt"
+                aria-label={t('appbar.exportAria')}
                 className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3 text-xs font-medium text-[#111827] transition-transform hover:bg-[#F4F4F5] active:scale-[0.98] dark:border-[#27272A] dark:bg-[#18181B] dark:text-[#F4F4F5] dark:hover:bg-[#27272A] whitespace-nowrap shrink-0"
               >
                 <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Export</span>
+                <span className="hidden sm:inline">{t('appbar.export')}</span>
               </button>
 
               <button
                 type="button"
                 onClick={onGoHome}
-                aria-label="Vytvoriť nový nápad"
+                aria-label={t('appbar.newIdeaAria')}
                 className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#2563EB] px-3.5 text-xs font-medium text-white transition-transform hover:bg-[#1D4ED8] active:scale-[0.98] whitespace-nowrap shrink-0"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Nový nápad</span>
+                <span className="hidden sm:inline">{t('appbar.newIdea')}</span>
               </button>
             </>
           )}
 
           <button
             type="button"
-            onClick={onToggleTheme}
-            aria-label={theme === 'dark' ? 'Prepnúť na svetlý režim' : 'Prepnúť na tmavý režim'}
+            onClick={() => {
+              const next = locale === 'sk' ? 'en' : 'sk';
+              trackEvent('locale_changed', { locale: next });
+              setLocale(next);
+            }}
+            aria-label={t('appbar.langAria')}
+            className="inline-flex h-10 items-center gap-1 rounded-full border border-[#E5E7EB] bg-white px-2.5 text-[#52525B] transition-colors hover:bg-[#F4F4F5] dark:border-[#27272A] dark:bg-[#18181B] dark:text-[#A1A1AA] dark:hover:bg-[#27272A] shrink-0"
+          >
+            <Globe className="h-4 w-4" />
+            <span className="text-[10px] font-bold">{locale.toUpperCase()}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              trackEvent('theme_changed', { theme: theme === 'dark' ? 'light' : 'dark' });
+              onToggleTheme();
+            }}
+            aria-label={theme === 'dark' ? t('appbar.themeToLight') : t('appbar.themeToDark')}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-[#52525B] transition-transform hover:bg-[#F4F4F5] hover:text-[#111827] active:scale-[0.96] dark:border-[#27272A] dark:bg-[#18181B] dark:text-[#A1A1AA] dark:hover:bg-[#27272A] dark:hover:text-[#F4F4F5] shrink-0"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

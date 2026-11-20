@@ -1,6 +1,7 @@
 import express from 'express';
 import { GoogleGenAI, ThinkingLevel, Type, type Schema } from '@google/genai';
 import { checkRateLimit } from '../lib/rate-limiter.ts';
+import { isMetricEvent, sanitizeMetricProps } from '../lib/metrics.ts';
 import { applySecurity } from './security.ts';
 import { validateGenerateBody, validateRefineBody } from './validateInput.ts';
 
@@ -799,7 +800,7 @@ Vráť prosím kompletný, neprázdny JSON objekt v slovenčine presne podľa za
 
 export interface ApiAppOptions {
   aiClientFactory?: () => GoogleGenAI | null;
-  rateLimit?: { generate: number; refine: number; windowMs?: number } | false;
+  rateLimit?: { generate: number; refine: number; log?: number; metrics?: number; windowMs?: number } | false;
 }
 
 export function createApiApp(options: ApiAppOptions = {}) {
@@ -809,7 +810,7 @@ export function createApiApp(options: ApiAppOptions = {}) {
 
   const aiClientFactory = options.aiClientFactory ?? getAiClient;
   const rateLimitConfig =
-    options.rateLimit === false ? null : (options.rateLimit ?? { generate: 10, refine: 20, windowMs: 60_000 });
+    options.rateLimit === false ? null : (options.rateLimit ?? { generate: 10, refine: 20, log: 60, windowMs: 60_000 });
 
   async function checkRequestRateLimit(
     req: express.Request,
@@ -944,6 +945,38 @@ Vráť upravený kompletný JSON objekt iba pre sekciu "${tabKey}" v slovenčine
       const formatted = formatAiError(err);
       res.status(formatted.status).json({ error: formatted.message });
     }
+  });
+
+  // Klientské logovanie chýb (error tracking bez externého servisu — žiadny egress)
+  app.post('/api/log', async (req, res) => {
+    if (rateLimitConfig && !(await checkRequestRateLimit(req, res, rateLimitConfig.log ?? 60))) {
+      return;
+    }
+    const body = req.body ?? {};
+    const level = body.level === 'warn' ? 'warn' : 'error';
+    const message = typeof body.message === 'string' ? body.message.slice(0, 500) : '';
+    if (!message) {
+      res.status(400).json({ error: 'Chýba správa.' });
+      return;
+    }
+    const url = typeof body.url === 'string' ? body.url.slice(0, 300) : '';
+    console.error(`[client:${level}] ${message}${url ? ` @ ${url}` : ''}`);
+    res.json({ ok: true });
+  });
+
+  // Anonymné metriky používania (rovnaký princíp ako /api/log, bez egressu)
+  app.post('/api/metrics', async (req, res) => {
+    if (rateLimitConfig && !(await checkRequestRateLimit(req, res, rateLimitConfig.metrics ?? 120))) {
+      return;
+    }
+    const body = req.body ?? {};
+    if (!isMetricEvent(body.event)) {
+      res.status(400).json({ error: 'Neznámy event.' });
+      return;
+    }
+    const props = sanitizeMetricProps(body.props);
+    console.log(`[metric] ${body.event}`, Object.keys(props).length > 0 ? JSON.stringify(props) : '');
+    res.json({ ok: true });
   });
 
   return app;

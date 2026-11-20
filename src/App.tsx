@@ -9,6 +9,7 @@ import {
   toggleRoadmapItem,
   updateBlueprintSection,
   upsertProjectInHistory,
+  mergeImportedProjects,
 } from './utils/projectLogic';
 import { TopAppBar } from './components/TopAppBar';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -17,7 +18,15 @@ import { WorkspaceScreen } from './components/WorkspaceScreen';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { ExportModal } from './components/ExportModal';
 import { ErrorToast } from './components/ErrorToast';
+import { SWUpdateToast } from './components/SWUpdateToast';
 import { useVisualViewport } from './hooks/useVisualViewport';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { trackEvent } from './utils/metrics';
+import {
+  enqueuePendingGeneration,
+  getPendingGenerations,
+  removePendingGeneration,
+} from './utils/offlineQueue';
 
 const STORAGE_PROJECTS_KEY = 'ideaforge_projects_v1';
 const STORAGE_ACTIVE_ID_KEY = 'ideaforge_active_project_v1';
@@ -110,9 +119,9 @@ export default function App() {
 
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
 
-  const handleGenerate = async (input: IdeaContextInput) => {
-    setIsGenerating(true);
-    setGenerateError(null);
+  const runGenerate = async (input: IdeaContextInput): Promise<boolean> => {
+    const startedAt = Date.now();
+    trackEvent('generate_started');
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -129,18 +138,58 @@ export default function App() {
       setActiveTab('promo');
       setRefineError(null);
       setLastFailedGenerateInput(null);
+      trackEvent('generate_success', { durationMs: Date.now() - startedAt });
+      return true;
     } catch (err) {
+      // Sieťová chyba / offline → nápad uložiť do fronty a odoslať pri obnovení pripojenia
+      if (typeof navigator === 'undefined' || !navigator.onLine || err instanceof TypeError) {
+        enqueuePendingGeneration(input);
+        setPendingCount(getPendingGenerations().length);
+      }
+      trackEvent('generate_failed', { durationMs: Date.now() - startedAt });
       setLastFailedGenerateInput(input);
       setGenerateError(
         err instanceof Error ? err.message : 'Pri komunikácii so serverom nastala chyba.'
       );
-    } finally {
-      setIsGenerating(false);
+      return false;
     }
   };
 
+  const handleGenerate = async (input: IdeaContextInput) => {
+    setIsGenerating(true);
+    setGenerateError(null);
+    await runGenerate(input);
+    setIsGenerating(false);
+  };
+
+  const isOnline = useOnlineStatus();
+  const [pendingCount, setPendingCount] = useState(() => getPendingGenerations().length);
+
+  // Spracovanie offline fronty pri štarte a po obnovení pripojenia
+  useEffect(() => {
+    if (!isOnline) return;
+    const queue = getPendingGenerations();
+    if (queue.length === 0) return;
+    let cancelled = false;
+    void (async () => {
+      for (const item of queue) {
+        if (cancelled) return;
+        const ok = await runGenerate(item);
+        if (ok) {
+          removePendingGeneration(item.idea);
+          setPendingCount(getPendingGenerations().length);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnline]);
+
   const handleRefineSection = async (tabKey: WorkspaceTabKey, instruction: string) => {
     if (!activeProject) return;
+    trackEvent('refine_started', { tabKey });
     setIsRefining(true);
     setRefineError(null);
     try {
@@ -160,7 +209,9 @@ export default function App() {
       const updatedProject = updateBlueprintSection(activeProject, tabKey, payload.sectionData);
       setProjects((prev) => upsertProjectInHistory(prev, updatedProject));
       setLastFailedRefine(null);
+      trackEvent('refine_success', { tabKey });
     } catch (err) {
+      trackEvent('refine_failed', { tabKey });
       setLastFailedRefine({ tabKey, instruction });
       setRefineError(
         err instanceof Error ? err.message : 'Pri úprave sekcie nastala neočakávaná chyba.'
@@ -193,10 +244,19 @@ export default function App() {
     }
   };
 
+  const handleOpenHistory = () => {
+    trackEvent('history_opened');
+    setIsHistoryOpen(true);
+  };
+
   const handleSelectProject = (id: string) => {
     setActiveProjectId(id);
     setActiveTab('promo');
     setRefineError(null);
+  };
+
+  const handleImportProjects = (imported: SavedProject[]) => {
+    setProjects((prev) => mergeImportedProjects(prev, imported));
   };
 
   const handleGoHome = () => {
@@ -224,15 +284,18 @@ export default function App() {
       <TopAppBar
         theme={theme}
         onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-        onOpenHistory={() => setIsHistoryOpen(true)}
+        onOpenHistory={handleOpenHistory}
         onGoHome={handleGoHome}
         projectTitle={activeProject?.title}
         historyCount={projects.length}
         isWorkspace={Boolean(activeProject)}
-        onOpenExport={() => setIsExportOpen(true)}
+        onOpenExport={() => {
+          trackEvent('export_opened');
+          setIsExportOpen(true);
+        }}
       />
 
-      <OfflineBanner />
+      <OfflineBanner pendingCount={pendingCount} />
 
       {activeProject ? (
         <WorkspaceScreen
@@ -279,6 +342,7 @@ export default function App() {
         onRenameProject={handleRenameProject}
         onDeleteProject={handleDeleteProject}
         onCreateNew={handleGoHome}
+        onImportProjects={handleImportProjects}
       />
 
       {activeProject && (
@@ -288,6 +352,8 @@ export default function App() {
           project={activeProject}
         />
       )}
+
+      <SWUpdateToast />
 
       <ErrorToast
         message={activeProject ? refineError : generateError}
