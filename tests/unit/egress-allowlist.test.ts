@@ -16,6 +16,9 @@ const ALLOWED_EXACT_HOSTS = new Set([
   'api.mistral.ai',
   'openapi.vercel.sh',
   'www.w3.org',
+  // loopback (playwright/vite preview/lighthouse configy) nie je externý egress
+  '127.0.0.1',
+  'localhost',
 ]);
 const ALLOWED_SUFFIXES = ['.upstash.io'];
 

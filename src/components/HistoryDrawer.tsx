@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Check, Download, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import type { SavedProject } from '../types/project';
 import { formatSlovakDate, parseProjectsBackup, serializeProjectsBackup } from '../utils/projectLogic';
+import { useI18n } from '../i18n';
 
 interface HistoryDrawerProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
   const [draftTitle, setDraftTitle] = useState('');
   const [importFeedback, setImportFeedback] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -99,12 +101,12 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         {/* Drawer Header */}
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#E5E7EB] px-4 dark:border-[#27272A]">
           <h2 className="text-sm font-semibold text-[#111827] dark:text-[#F4F4F5]">
-            Uložené projekty ({projects.length})
+            {t('history.title', { count: projects.length })}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Zavrieť históriu projektov"
+            aria-label={t('history.closeAria')}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#52525B] transition-transform hover:bg-[#F4F4F5] dark:text-[#A1A1AA] dark:hover:bg-[#27272A]"
           >
             <X className="h-4 w-4" />
@@ -132,7 +134,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
               className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3 text-xs font-medium text-[#52525B] transition-colors hover:bg-[#F4F4F5] hover:text-[#111827] dark:border-[#27272A] dark:bg-[#18181B] dark:text-[#A1A1AA] dark:hover:bg-[#27272A] dark:hover:text-[#F4F4F5]"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>Záloha JSON</span>
+              <span>{t('history.backup')}</span>
             </button>
             <button
               type="button"
@@ -140,14 +142,14 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
               className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3 text-xs font-medium text-[#52525B] transition-colors hover:bg-[#F4F4F5] hover:text-[#111827] dark:border-[#27272A] dark:bg-[#18181B] dark:text-[#A1A1AA] dark:hover:bg-[#27272A] dark:hover:text-[#F4F4F5]"
             >
               <Upload className="h-3.5 w-3.5" />
-              <span>Import</span>
+              <span>{t('history.import')}</span>
             </button>
             <input
               ref={fileInputRef}
               type="file"
               accept="application/json,.json"
               className="hidden"
-              aria-label="Importovať zálohu projektov (JSON)"
+              aria-label={t('history.importAria')}
               onChange={handleImportFile}
             />
           </div>
@@ -163,10 +165,10 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
           {projects.length === 0 ? (
             <div className="px-4 py-12 text-center">
               <p className="text-sm font-medium text-[#111827] dark:text-[#F4F4F5]">
-                Zatiaľ nemáte žiadne uložené projekty
+                {t('history.emptyTitle')}
               </p>
               <p className="mt-1 text-xs text-[#52525B] dark:text-[#A1A1AA]">
-                Všetky vygenerované nápady sa sem automaticky uložia.
+                {t('history.emptyHint')}
               </p>
             </div>
           ) : (

@@ -20,6 +20,12 @@ import { ExportModal } from './components/ExportModal';
 import { ErrorToast } from './components/ErrorToast';
 import { SWUpdateToast } from './components/SWUpdateToast';
 import { useVisualViewport } from './hooks/useVisualViewport';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
+import {
+  enqueuePendingGeneration,
+  getPendingGenerations,
+  removePendingGeneration,
+} from './utils/offlineQueue';
 
 const STORAGE_PROJECTS_KEY = 'ideaforge_projects_v1';
 const STORAGE_ACTIVE_ID_KEY = 'ideaforge_active_project_v1';
@@ -112,9 +118,7 @@ export default function App() {
 
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
 
-  const handleGenerate = async (input: IdeaContextInput) => {
-    setIsGenerating(true);
-    setGenerateError(null);
+  const runGenerate = async (input: IdeaContextInput): Promise<boolean> => {
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -131,15 +135,52 @@ export default function App() {
       setActiveTab('promo');
       setRefineError(null);
       setLastFailedGenerateInput(null);
+      return true;
     } catch (err) {
+      // Sieťová chyba / offline → nápad uložiť do fronty a odoslať pri obnovení pripojenia
+      if (typeof navigator === 'undefined' || !navigator.onLine || err instanceof TypeError) {
+        enqueuePendingGeneration(input);
+        setPendingCount(getPendingGenerations().length);
+      }
       setLastFailedGenerateInput(input);
       setGenerateError(
         err instanceof Error ? err.message : 'Pri komunikácii so serverom nastala chyba.'
       );
-    } finally {
-      setIsGenerating(false);
+      return false;
     }
   };
+
+  const handleGenerate = async (input: IdeaContextInput) => {
+    setIsGenerating(true);
+    setGenerateError(null);
+    await runGenerate(input);
+    setIsGenerating(false);
+  };
+
+  const isOnline = useOnlineStatus();
+  const [pendingCount, setPendingCount] = useState(() => getPendingGenerations().length);
+
+  // Spracovanie offline fronty pri štarte a po obnovení pripojenia
+  useEffect(() => {
+    if (!isOnline) return;
+    const queue = getPendingGenerations();
+    if (queue.length === 0) return;
+    let cancelled = false;
+    void (async () => {
+      for (const item of queue) {
+        if (cancelled) return;
+        const ok = await runGenerate(item);
+        if (ok) {
+          removePendingGeneration(item.idea);
+          setPendingCount(getPendingGenerations().length);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnline]);
 
   const handleRefineSection = async (tabKey: WorkspaceTabKey, instruction: string) => {
     if (!activeProject) return;
@@ -238,7 +279,7 @@ export default function App() {
         onOpenExport={() => setIsExportOpen(true)}
       />
 
-      <OfflineBanner />
+      <OfflineBanner pendingCount={pendingCount} />
 
       {activeProject ? (
         <WorkspaceScreen

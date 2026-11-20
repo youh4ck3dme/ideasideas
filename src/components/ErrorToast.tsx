@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, RotateCcw, X } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 interface ErrorToastProps {
   message: string | null;
@@ -14,6 +15,7 @@ export const ErrorToast: React.FC<ErrorToastProps> = ({
   onDismiss,
   hasBottomNav = false,
 }) => {
+  const { t } = useI18n();
   if (!message) return null;
 
   return (
@@ -30,7 +32,7 @@ export const ErrorToast: React.FC<ErrorToastProps> = ({
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold text-[#111827] dark:text-[#F4F4F5]">
-            Nepodarilo sa dokončiť požiadavku
+            {t('toast.errorTitle')}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-[#52525B] dark:text-[#A1A1AA]">
             {message}
@@ -43,7 +45,7 @@ export const ErrorToast: React.FC<ErrorToastProps> = ({
                 className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#2563EB] px-3.5 text-xs font-medium text-white transition-transform hover:bg-[#1D4ED8] active:scale-[0.98]"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                <span>Skúsiť znova</span>
+                <span>{t('toast.retry')}</span>
               </button>
             )}
             <button
@@ -51,14 +53,14 @@ export const ErrorToast: React.FC<ErrorToastProps> = ({
               onClick={onDismiss}
               className="inline-flex h-8 items-center rounded-full border border-[#E5E7EB] px-3 text-xs font-medium text-[#52525B] hover:text-[#111827] dark:border-[#27272A] dark:text-[#A1A1AA] dark:hover:text-[#F4F4F5]"
             >
-              Zavrieť
+              {t('toast.dismiss')}
             </button>
           </div>
         </div>
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Zavrieť upozornenie"
+          aria-label={t('toast.closeAria')}
           className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#71717A] hover:bg-[#F4F4F5] hover:text-[#111827] dark:hover:bg-[#27272A] dark:hover:text-[#F4F4F5]"
         >
           <X className="h-4 w-4" />

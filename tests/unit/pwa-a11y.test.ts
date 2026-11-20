@@ -29,7 +29,7 @@ test('PWA: SW autoUpdate + kontrola novej verzie a update toast', () => {
   assert.match(main, /registration\.update\(\)/, 'periodická kontrola novej verzie SW');
   const toast = read('src/components/SWUpdateToast.tsx');
   assert.match(toast, /controllerchange/, 'toast reaguje na controllerchange');
-  assert.match(toast, /Obnoviť/, 'toast má akciu Obnoviť');
+  assert.match(toast, /swUpdate\.reload/, 'toast má akciu reload cez i18n kľúč');
   const app = read('src/App.tsx');
   assert.match(app, /<SWUpdateToast \/>/, 'SWUpdateToast zapojený v App');
 });

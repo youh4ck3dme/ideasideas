@@ -109,12 +109,13 @@ Posledná aktualizácia: pozri nižšie sekciu „Čo bolo zmenené" — tie bod
 - [x] **Dáta používateľa — JSON záloha**: `serializeProjectsBackup`/`parseProjectsBackup`/`mergeImportedProjects` v `src/utils/projectLogic.ts` (validácia štruktúry, formát `ideaforge-projects-backup` v1) + tlačidlá „Záloha JSON“/„Import“ v HistoryDraweri (dedupe podľa id). Testy: `tests/unit/projects-backup.test.ts` + 2 e2e (import validnej/zlej zálohy).
 
 ### 🟡 P2 — po launchi (kvalita a rast)
-- [ ] Error tracking (Sentry alebo vlastný endpoint) + anonymné metriky používania (ktoré taby, úspešnosť generovania).
+- [x] **Error tracking (lokálne, bez egressu)**: klient `src/utils/errorReporting.ts` (window error + unhandledrejection → `POST /api/log`, rate-limit 60/min, validované/truncované) zapojený v `main.tsx` + `app/page.tsx`; testy 200/400/429 v `api.integration.test.ts`. Externý provider (Sentry) cez env DSN — neskôr.
+- [x] **Offline queue pre `/api/generate`**: `src/utils/offlineQueue.ts` (localStorage, dedupe, max 10, validácia); sieťová chyba → front + `OfflineBanner` ukazuje „Čaká na odoslanie: N"; po obnovení pripojenia sa fronta spracuje automaticky. Testy: `tests/unit/offline-queue.test.ts` + e2e (offline → front → online → odoslané).
+- [x] **i18n scaffold (SK/EN)**: `src/i18n/index.tsx` (I18nProvider + `t()` + SK/EN slovníky, paritný test), prepínač SK/EN v TopAppBar, locale v localStorage; prepojený chrome (appbar, bannery, toasty, history drawer). Migrácia obsahu obrazoviek — follow-up. Testy: `tests/unit/i18n.test.ts` + e2e prepínač.
+- [x] **Prehliadačové e2e + Lighthouse pripravené** (beží v prostredí s Chromium): `playwright.config.ts` + `tests/browser/app.browser.spec.ts` (mobile viewport, native-feel asserts, generate flow s mock API) cez `bun run test:e2e:browser`; `.lighthouserc.json` (mobile, PWA/a11y/best-practices ≥ 0.9, performance ≥ 0.9 warn) cez `bun run lighthouse` po `vite preview` na :4173. V tomto sandboxe prehliadač nejde (chýbajú systémové knižnice) — preto `check` beží DOM-level e2e.
 - [ ] Bundle analýza (`vite-bundle-visualizer`), lazy-loading tabov ak veľkosť narastie.
-- [ ] Offline queue pre `/api/generate` (zlyhanie siete → uložiť návrh a opakovať neskôr).
-- [ ] Lighthouse CI (PWA kategória = 100, Performance ≥ 90 na 4G mobile).
-- [ ] i18n (SK/EN) pripravenosť textov.
-- [ ] Dokumentácia „Ako testovať native feel" (manuálny checklist na iOS Safari, iOS standalone, Android Chrome, Android TWA).
+- [ ] Anonymné metriky používania (ktoré taby, úspešnosť generovania) — cez `/api/log` alebo externý provider.
+- [ ] Manuálny 9-bodový „native feel" checklist (§6 nižšie) vykonať na fyzickom mobile (iOS Safari, iOS standalone, Android Chrome).
 
 ---
 

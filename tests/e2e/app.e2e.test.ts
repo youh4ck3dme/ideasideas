@@ -94,6 +94,7 @@ async function createHarness(): Promise<Harness> {
   const React = await import('react');
   const { createRoot } = await import('react-dom/client');
   const { default: App } = await import('../../src/App.tsx');
+  const { I18nProvider } = await import('../../src/i18n/index.tsx');
 
   const container = window.document.createElement('div');
   window.document.body.appendChild(container);
@@ -101,7 +102,7 @@ async function createHarness(): Promise<Harness> {
   const act = React.act as (cb: () => Promise<void> | void) => Promise<void>;
 
   await act(async () => {
-    root.render(React.createElement(App));
+    root.render(React.createElement(I18nProvider, null, React.createElement(App)));
   });
 
   return { window, container, root, act, fetchCalls };
@@ -320,6 +321,63 @@ test('e2e: import neplatnej zálohy zobrazí chybu', async () => {
     });
     await flush(h, 50);
     assert.match(h.container.textContent ?? '', /nie je platný JSON/, 'chyba importu viditeľná');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: offline zlyhanie uloží nápad do fronty a po online sa odošle', async () => {
+  const h = await createHarness();
+  try {
+    // simuluj offline + zlyhanie fetch
+    Object.defineProperty(h.window.navigator, 'onLine', { value: false, configurable: true });
+    await h.act(async () => {
+      h.window.dispatchEvent(new h.window.Event('offline'));
+    });
+    await flush(h);
+    const realFetch = (globalThis as any).fetch;
+    (globalThis as any).fetch = async (input: unknown) => {
+      if (String(input).includes('/api/generate')) throw new TypeError('fetch failed');
+      return realFetch(input);
+    };
+
+    const textarea = h.container.querySelector('#idea-prompt-input')!;
+    await h.act(async () => {
+      setInputValue(h.window, textarea, 'Offline nápad dostatočne dlhý na frontu');
+      h.container.querySelector('form')!.dispatchEvent(new h.window.Event('submit', { bubbles: true, cancelable: true }));
+    });
+    await flush(h, 50);
+
+    const { getPendingGenerations } = await import('../../src/utils/offlineQueue.ts');
+    assert.equal(getPendingGenerations().length, 1, 'nápad je uložený vo fronte');
+    assert.match(h.container.textContent ?? '', /Nepodarilo sa dokončiť požiadavku|chyba/i, 'chyba viditeľná');
+
+    // späť online + úspešný fetch → fronta sa spracuje
+    (globalThis as any).fetch = realFetch;
+    Object.defineProperty(h.window.navigator, 'onLine', { value: true, configurable: true });
+    await h.act(async () => {
+      h.window.dispatchEvent(new h.window.Event('online'));
+    });
+    await flush(h, 80);
+
+    assert.equal(getPendingGenerations().length, 0, 'fronta vyprázdnená po úspechu');
+    assert.ok(h.container.querySelectorAll('[role="tab"]').length >= 5, 'workspace sa zobrazil po odoslaní z fronty');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: prepínač jazyka SK/EN prepína chrome aplikácie', async () => {
+  const h = await createHarness();
+  try {
+    const langBtn = h.container.querySelector('button[aria-label*="language"]')!;
+    assert.ok(langBtn, 'jazykový prepínač existuje');
+    assert.match(h.container.textContent ?? '', /Projekty|Otvoriť históriu/, 'defaultne SK');
+    await h.act(async () => click(h.window, langBtn));
+    await flush(h);
+    const historyBtn = h.container.querySelector('button[aria-label^="Open project history"]');
+    assert.ok(historyBtn, 'po prepnutí na EN je aria-label anglicky');
+    assert.equal(h.window.localStorage.getItem('ideaforge_locale'), 'en', 'locale uložená');
   } finally {
     await h.act(async () => h.root.unmount());
   }
