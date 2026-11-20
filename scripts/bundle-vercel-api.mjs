@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { rm } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,5 +21,8 @@ await build({
   logLevel: 'info',
 });
 
-await rm(path.join(root, 'api/index.ts'));
-console.log('bundle-vercel-api: api/index.mjs ready, api/index.ts removed so Node can load the bundle');
+await writeFile(
+  path.join(root, 'api/index.ts'),
+  "import app from './index.mjs';\nexport default app;\n"
+);
+console.log('bundle-vercel-api: api/index.mjs ready, api/index.ts now re-exports it');
