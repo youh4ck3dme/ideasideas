@@ -238,3 +238,89 @@ test('e2e: história projektov (drawer) a export modal fungujú', async () => {
     await h.act(async () => h.root.unmount());
   }
 });
+
+test('e2e: Escape zavrie history drawer', async () => {
+  const h = await createHarness();
+  try {
+    const historyBtn = h.container.querySelector('button[aria-label^="Otvoriť históriu projektov"]')!;
+    await h.act(async () => click(h.window, historyBtn));
+    await flush(h);
+    assert.match(h.container.textContent ?? '', /Uložené projekty/);
+    await h.act(async () => {
+      h.window.dispatchEvent(new h.window.KeyboardEvent('keydown', { key: 'Escape' }));
+    });
+    await flush(h);
+    assert.ok(!/Uložené projekty/.test(h.container.textContent ?? ''), 'drawer sa zavrel po Escape');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: controllerchange zobrazí SW update toast', async () => {
+  const h = await createHarness();
+  try {
+    assert.ok(!/nová verzia aplikácie/i.test(h.container.textContent ?? ''), 'toast predtým skrytý');
+    await h.act(async () => {
+      h.window.dispatchEvent(new h.window.Event('controllerchange'));
+    });
+    await flush(h);
+    assert.match(h.container.textContent ?? '', /nová verzia aplikácie/i, 'toast sa zobrazil');
+    const reloadBtn = [...h.container.querySelectorAll('button')].find((b: any) =>
+      (b.textContent ?? '').includes('Obnoviť')
+    );
+    assert.ok(reloadBtn, 'tlačidlo Obnoviť existuje');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: history drawer má tlačidlá Záloha JSON / Import a import pridá projekt', async () => {
+  const h = await createHarness();
+  try {
+    const historyBtn = h.container.querySelector('button[aria-label^="Otvoriť históriu projektov"]')!;
+    await h.act(async () => click(h.window, historyBtn));
+    await flush(h);
+
+    const buttons = [...h.container.querySelectorAll('button')].map((b: any) => b.textContent ?? '');
+    assert.ok(buttons.some((t) => t.includes('Záloha JSON')), 'tlačidlo Záloha JSON');
+    assert.ok(buttons.some((t) => t.includes('Import')), 'tlačidlo Import');
+
+    const input = h.container.querySelector('input[type="file"]') as any;
+    assert.ok(input, 'file input existuje');
+    const backup = JSON.stringify({
+      format: 'ideaforge-projects-backup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      projects: [SAMPLE_PROJECT],
+    });
+    const file = new h.window.File([backup], 'zaloha.json', { type: 'application/json' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    await h.act(async () => {
+      input.dispatchEvent(new h.window.Event('change', { bubbles: true }));
+    });
+    await flush(h, 50);
+    assert.match(h.container.textContent ?? '', /Importované projekty: 1/, 'feedback po importe');
+    assert.match(h.container.textContent ?? '', new RegExp(SAMPLE_PROJECT.title.slice(0, 12)), 'projekt je v zozname');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});
+
+test('e2e: import neplatnej zálohy zobrazí chybu', async () => {
+  const h = await createHarness();
+  try {
+    const historyBtn = h.container.querySelector('button[aria-label^="Otvoriť históriu projektov"]')!;
+    await h.act(async () => click(h.window, historyBtn));
+    await flush(h);
+    const input = h.container.querySelector('input[type="file"]') as any;
+    const file = new h.window.File(['{zly json'], 'zaloha.json', { type: 'application/json' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    await h.act(async () => {
+      input.dispatchEvent(new h.window.Event('change', { bubbles: true }));
+    });
+    await flush(h, 50);
+    assert.match(h.container.textContent ?? '', /nie je platný JSON/, 'chyba importu viditeľná');
+  } finally {
+    await h.act(async () => h.root.unmount());
+  }
+});

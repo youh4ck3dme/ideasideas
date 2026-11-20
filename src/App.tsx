@@ -9,6 +9,7 @@ import {
   toggleRoadmapItem,
   updateBlueprintSection,
   upsertProjectInHistory,
+  mergeImportedProjects,
 } from './utils/projectLogic';
 import { TopAppBar } from './components/TopAppBar';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -17,6 +18,7 @@ import { WorkspaceScreen } from './components/WorkspaceScreen';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { ExportModal } from './components/ExportModal';
 import { ErrorToast } from './components/ErrorToast';
+import { SWUpdateToast } from './components/SWUpdateToast';
 import { useVisualViewport } from './hooks/useVisualViewport';
 
 const STORAGE_PROJECTS_KEY = 'ideaforge_projects_v1';
@@ -199,6 +201,10 @@ export default function App() {
     setRefineError(null);
   };
 
+  const handleImportProjects = (imported: SavedProject[]) => {
+    setProjects((prev) => mergeImportedProjects(prev, imported));
+  };
+
   const handleGoHome = () => {
     setActiveProjectId(null);
     setGenerateError(null);
@@ -279,6 +285,7 @@ export default function App() {
         onRenameProject={handleRenameProject}
         onDeleteProject={handleDeleteProject}
         onCreateNew={handleGoHome}
+        onImportProjects={handleImportProjects}
       />
 
       {activeProject && (
@@ -288,6 +295,8 @@ export default function App() {
           project={activeProject}
         />
       )}
+
+      <SWUpdateToast />
 
       <ErrorToast
         message={activeProject ? refineError : generateError}

@@ -6,6 +6,15 @@ import './index.css';
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   registerSW({
     immediate: true,
+    onRegisteredSW(_swUrl, registration) {
+      // V produkcii kontroluj novú verziu SW každú minútu (autoUpdate ju aplikuje
+      // a SWUpdateToast cez controllerchange ponúkne obnovenie)
+      if (registration && import.meta.env.PROD) {
+        window.setInterval(() => {
+          registration.update().catch(() => {});
+        }, 60_000);
+      }
+    },
     onOfflineReady() {
       // Service worker cached shell for offline launch
     },

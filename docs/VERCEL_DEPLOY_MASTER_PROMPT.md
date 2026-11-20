@@ -14,7 +14,7 @@ Tento dokument je kompletný produkčný návod na deploy aplikácie na Vercel. 
 | PWA | `vite-plugin-pwa` (SW `autoUpdate`, manifest `display: standalone`) | generované do `dist/` pri buildi |
 | Bezpečnosť | `vercel.json` headers (CSP, nosniff, XFO, Referrer-Policy) + `server/security.ts` (trust proxy, same-origin check na /api, rate limit) | edge headers + middleware vo funkcii |
 
-> Poznámka: adresár `app/` (Next.js) zatiaľ **nie je** deploy cieľ — `vercel.json` smeruje na Vite + `api/index.ts` funkciu. Dokončenie Next.js migrácie (`app/layout.tsx` s viewportom, `app/page.tsx`) je v backlogu (`docs/NATIVE_APP_FEEL_DIAGNOSTIKA_A_BACKLOG.md`, P1).
+> Poznámka: adresár `app/` (Next.js) je už dokončená migrácia (`app/layout.tsx` s rovnakým viewport pravidlom, `app/page.tsx`, `app/api/*`, `app/manifest.ts`) — overené `bun run build:next`. **Deploy cieľ však zostáva Vite + `api/index.ts` funkcia** podľa `vercel.json`; Next.js varianta je pripravená, keď sa rozhodnete pre ňu prepnúť. Funkcia zálohy: používateľ môže exportovať/importovať všetky projekty ako JSON („Záloha JSON“ / „Import“ v histórii projektov).
 
 ---
 

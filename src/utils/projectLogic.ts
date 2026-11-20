@@ -159,6 +159,74 @@ export function upsertProjectInHistory(
   return history.map((item) => (item.id === project.id ? project : item));
 }
 
+export const BACKUP_FORMAT = 'ideaforge-projects-backup';
+export const BACKUP_VERSION = 1;
+
+export interface ProjectsBackup {
+  format: typeof BACKUP_FORMAT;
+  version: number;
+  exportedAt: string;
+  projects: SavedProject[];
+}
+
+export function serializeProjectsBackup(projects: SavedProject[]): string {
+  const backup: ProjectsBackup = {
+    format: BACKUP_FORMAT,
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    projects,
+  };
+  return JSON.stringify(backup, null, 2);
+}
+
+function isRecord(val: unknown): val is Record<string, unknown> {
+  return typeof val === 'object' && val !== null && !Array.isArray(val);
+}
+
+function isValidSavedProject(val: unknown): boolean {
+  if (!isRecord(val)) return false;
+  if (typeof val.id !== 'string' || !val.id) return false;
+  if (typeof val.title !== 'string') return false;
+  if (typeof val.createdAt !== 'string' || typeof val.updatedAt !== 'string') return false;
+  const input = isRecord(val.input) ? val.input : null;
+  if (!input) return false;
+  if (typeof input.idea !== 'string') return false;
+  if (typeof input.budget !== 'string' || typeof input.projectType !== 'string') return false;
+  const blueprint = isRecord(val.blueprint) ? val.blueprint : null;
+  if (!blueprint) return false;
+  for (const key of ['promo', 'roadmap', 'tech', 'marketing', 'antifail']) {
+    if (!isRecord(blueprint[key])) return false;
+  }
+  return true;
+}
+
+export function parseProjectsBackup(raw: string): { projects: SavedProject[] } | { error: string } {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { error: 'Súbor nie je platný JSON.' };
+  }
+  const record = isRecord(parsed) ? parsed : null;
+  const list = record && 'projects' in record ? record.projects : parsed;
+  if (!Array.isArray(list)) {
+    return { error: 'Záloha neobsahuje pole projektov.' };
+  }
+  for (const item of list) {
+    if (!isValidSavedProject(item)) {
+      return { error: 'Záloha obsahuje neplatný projekt (chýbajú povinné polia).' };
+    }
+  }
+  return { projects: list as SavedProject[] };
+}
+
+export function mergeImportedProjects(
+  history: SavedProject[],
+  imported: SavedProject[]
+): SavedProject[] {
+  return imported.reduce((acc, project) => upsertProjectInHistory(acc, project), history);
+}
+
 export function renameProjectInHistory(
   history: SavedProject[],
   projectId: string,

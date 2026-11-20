@@ -69,6 +69,29 @@
   }
 }
 
+/* A11y: rešpektuj prefers-reduced-motion (progress bar, transitiony, smooth scroll) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* A11y: viditeľný fokus pre klávesnicovú navigáciu (inputy majú vlastný borderový indikátor) */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.dark a:focus-visible,
+.dark button:focus-visible {
+  outline-color: #3b82f6;
+}
+
 /* Custom subtle scrollbars for inner scrollable viewports */
 .custom-scrollbar {
   scrollbar-width: thin;

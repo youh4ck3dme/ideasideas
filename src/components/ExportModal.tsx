@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Copy, Download, Printer, X } from 'lucide-react';
 import type { SavedProject } from '../types/project';
 import { exportProjectToMarkdown } from '../utils/projectLogic';
@@ -13,6 +13,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, proje
   const [copied, setCopied] = useState(false);
 
   const markdown = useMemo(() => exportProjectToMarkdown(project), [project]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
