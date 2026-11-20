@@ -93,7 +93,7 @@ Prispôsob technický stack, rozpočtové odhady v EUR, realizačný plán, mark
   }
 
   // Provider routing & automatic failover
-  let activeModelId = requestedModelId;
+  let activeModelId = !body.modelId && hasMistral ? 'mistral-flagship' : requestedModelId;
   if (requestedModelId.startsWith('mistral') && !hasMistral && hasGoogle) {
     activeModelId = 'gemini-fast';
   } else if (requestedModelId.startsWith('gemini') && !hasGoogle && hasMistral) {

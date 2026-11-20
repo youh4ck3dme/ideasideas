@@ -4,6 +4,13 @@ import { checkRateLimit } from '../lib/rate-limiter.ts';
 import { isMetricEvent, sanitizeMetricProps } from '../lib/metrics.ts';
 import { applySecurity } from './security.ts';
 import { validateGenerateBody, validateRefineBody } from './validateInput.ts';
+import {
+  BLUEPRINT_JSON_SHAPE,
+  SECTION_JSON_SHAPES,
+  callMistralJson,
+  getMistralApiKey,
+  normalizeMistralKey,
+} from './mistral.ts';
 
 export const MODEL_ID = 'gemini-4-hydrogen';
 
@@ -674,6 +681,7 @@ function formatAiError(err: unknown): { status: number; message: string; code?: 
     };
   }
   if (
+    apiStatus === 401 ||
     apiStatus === 403 ||
     raw.includes('API_KEY_INVALID') ||
     raw.includes('PERMISSION_DENIED') ||
@@ -683,7 +691,7 @@ function formatAiError(err: unknown): { status: number; message: string; code?: 
       status: 403,
       code: 403,
       message:
-        'Prístup k Gemini API bol zamietnutý. Skontrolujte prosím API kľúč v paneli Settings > Secrets.',
+        'Prístup k AI modelu bol zamietnutý. Skontrolujte MISTRAL_API_KEY alebo GEMINI_API_KEY.',
     };
   }
   if (apiStatus === 429 || raw.includes('RESOURCE_EXHAUSTED')) {
@@ -798,8 +806,65 @@ Vráť prosím kompletný, neprázdny JSON objekt v slovenčine presne podľa za
   throw new Error(`VALIDATION_FAILED: ${lastValidationReason}`);
 }
 
+async function generateMistralValidated<T>(
+  apiKey: string,
+  basePrompt: string,
+  jsonShape: string,
+  maxOutputTokens: number,
+  validate: (data: unknown) => string | null,
+  fetchImpl?: typeof fetch
+): Promise<T> {
+  let prompt = `${basePrompt}\n\n${jsonShape}\nOdpoveď musí byť čistý JSON objekt.`;
+  let lastValidationReason = '';
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const text = await callMistralJson({
+      apiKey,
+      system: SYSTEM_INSTRUCTION,
+      prompt,
+      maxTokens: maxOutputTokens,
+      fetchImpl,
+    });
+    try {
+      const parsed = parseJsonResponse(text);
+      const validationError = validate(parsed);
+      if (!validationError) {
+        return parsed as T;
+      }
+      lastValidationReason = validationError;
+    } catch (err) {
+      lastValidationReason = err instanceof Error ? err.message : 'Neplatný JSON formát';
+    }
+
+    if (attempt === 0) {
+      console.warn(`Mistral JSON validation failed, retrying once: ${lastValidationReason}`);
+      prompt = `${basePrompt}
+
+${jsonShape}
+
+DÔLEŽITÉ UPOZORNENIE PRE OPRAVU:
+Predchádzajúca odpoveď neprešla validačnou kontrolou z tohto dôvodu: ${lastValidationReason}
+Vráť kompletný JSON objekt v slovenčine, bez markdownu, so všetkými požadovanými počtami položiek.`;
+    }
+  }
+
+  throw new Error(`VALIDATION_FAILED: ${lastValidationReason}`);
+}
+
+function isTransientAiStatus(err: unknown): boolean {
+  const status =
+    typeof err === 'object' && err !== null && 'status' in err
+      ? Number((err as { status?: unknown }).status)
+      : undefined;
+  const msg = err instanceof Error ? err.message : String(err);
+  return status === 429 || status === 503 || status === 502 || msg.includes('UNAVAILABLE');
+}
+
 export interface ApiAppOptions {
   aiClientFactory?: () => GoogleGenAI | null;
+  /** undefined = čítaj MISTRAL_API_KEY, null = Mistral vypnutý, string = použi tento kľúč. */
+  mistralApiKey?: string | null;
+  mistralFetch?: typeof fetch;
   rateLimit?: { generate: number; refine: number; log?: number; metrics?: number; windowMs?: number } | false;
 }
 
@@ -808,7 +873,55 @@ export function createApiApp(options: ApiAppOptions = {}) {
   applySecurity(app);
   app.use(express.json({ limit: '2mb' }));
 
-  const aiClientFactory = options.aiClientFactory ?? getAiClient;
+  type Engine =
+    | { kind: 'gemini'; client: GoogleGenAI }
+    | { kind: 'mistral'; apiKey: string };
+
+  function resolveEngine(): Engine | null {
+    if (options.aiClientFactory) {
+      const client = options.aiClientFactory();
+      return client ? { kind: 'gemini', client } : null;
+    }
+    const mistralKey =
+      options.mistralApiKey !== undefined
+        ? normalizeMistralKey(options.mistralApiKey)
+        : getMistralApiKey();
+    if (mistralKey) return { kind: 'mistral', apiKey: mistralKey };
+    const client = getAiClient();
+    return client ? { kind: 'gemini', client } : null;
+  }
+
+  const noKeyMessage =
+    'API kľúč pre Mistral ani Gemini nie je nastavený. Pridajte MISTRAL_API_KEY alebo GEMINI_API_KEY a skúste znova.';
+
+  async function runStructured<T>(
+    engine: Engine,
+    prompt: string,
+    schema: Schema,
+    jsonShape: string,
+    maxTokens: number,
+    validate: (data: unknown) => string | null
+  ): Promise<T> {
+    if (engine.kind === 'mistral') {
+      try {
+        return await generateMistralValidated(
+          engine.apiKey,
+          prompt,
+          jsonShape,
+          Math.min(maxTokens, 8192),
+          validate,
+          options.mistralFetch
+        );
+      } catch (err) {
+        const gemini = isTransientAiStatus(err) ? getAiClient() : null;
+        if (!gemini) throw err;
+        console.warn('Mistral dočasne nedostupný, skúšam Gemini.');
+        return generateValidatedJson(gemini, prompt, schema, maxTokens, validate);
+      }
+    }
+    return generateValidatedJson(engine.client, prompt, schema, maxTokens, validate);
+  }
+
   const rateLimitConfig =
     options.rateLimit === false ? null : (options.rateLimit ?? { generate: 10, refine: 20, log: 60, windowMs: 60_000 });
 
@@ -834,16 +947,14 @@ export function createApiApp(options: ApiAppOptions = {}) {
   }
 
   app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, hasKey: Boolean(aiClientFactory()) });
+    const engine = resolveEngine();
+    res.json({ ok: true, hasKey: Boolean(engine), provider: engine?.kind ?? 'none' });
   });
 
   app.post('/api/generate', async (req, res) => {
-    const ai = aiClientFactory();
-    if (!ai) {
-      res.status(503).json({
-        error:
-          'API kľúč pre Gemini nie je nastavený. Pridajte ho v paneli Settings > Secrets a skúste znova.',
-      });
+    const engine = resolveEngine();
+    if (!engine) {
+      res.status(503).json({ error: noKeyMessage });
       return;
     }
 
@@ -867,28 +978,26 @@ export function createApiApp(options: ApiAppOptions = {}) {
 Prispôsob technický stack, rozpočtové odhady v EUR, realizačný plán, marketingovú stratégiu, 5 kritických chýb, 5 železných pravidiel a 3 etapy škálovania (100 → 1 000 → 10 000 používateľov) presne uvedenému rozpočtu (${budget}) a typu projektu (${projectType}).`;
 
     try {
-      const blueprint = await generateValidatedJson(
-        ai,
+      const blueprint = await runStructured(
+        engine,
         prompt,
         fullBlueprintSchema,
-        16384,
+        BLUEPRINT_JSON_SHAPE,
+        8192,
         validateBlueprint
       );
       res.json({ blueprint });
     } catch (err) {
-      console.error('Gemini /api/generate error:', err);
+      console.error('AI /api/generate error:', err);
       const formatted = formatAiError(err);
       res.status(formatted.status).json({ error: formatted.message });
     }
   });
 
   app.post('/api/refine', async (req, res) => {
-    const ai = aiClientFactory();
-    if (!ai) {
-      res.status(503).json({
-        error:
-          'API kľúč pre Gemini nie je nastavený. Pridajte ho v paneli Settings > Secrets a skúste znova.',
-      });
+    const engine = resolveEngine();
+    if (!engine) {
+      res.status(503).json({ error: noKeyMessage });
       return;
     }
 
@@ -932,16 +1041,17 @@ Požiadavka používateľa na úpravu tejto sekcie:
 Vráť upravený kompletný JSON objekt iba pre sekciu "${tabKey}" v slovenčine, pri zachovaní všetkých požadovaných polí a počtov položiek.`;
 
     try {
-      const updatedSection = await generateValidatedJson(
-        ai,
+      const updatedSection = await runStructured(
+        engine,
         prompt,
         targetSchema,
-        8192,
+        SECTION_JSON_SHAPES[tabKey] ?? BLUEPRINT_JSON_SHAPE,
+        4096,
         (data) => validateSectionData(tabKey, data)
       );
       res.json({ tabKey, sectionData: updatedSection });
     } catch (err) {
-      console.error('Gemini /api/refine error:', err);
+      console.error('AI /api/refine error:', err);
       const formatted = formatAiError(err);
       res.status(formatted.status).json({ error: formatted.message });
     }

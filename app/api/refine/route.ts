@@ -95,7 +95,7 @@ Vráť upravený kompletný JSON objekt výhradne pre sekciu "${tabKey}" v slove
     );
   }
 
-  let activeModelId = requestedModelId;
+  let activeModelId = !body.modelId && hasMistral ? 'mistral-flagship' : requestedModelId;
   if (requestedModelId.startsWith('mistral') && !hasMistral && hasGoogle) {
     activeModelId = 'gemini-fast';
   } else if (requestedModelId.startsWith('gemini') && !hasGoogle && hasMistral) {

@@ -22,9 +22,9 @@ Tento dokument je kompletný produkčný návod na deploy aplikácie na Vercel. 
 
 | Premenná | Povinná | Účel |
 |---|---|---|
-| `GEMINI_API_KEY` | ✅ | Hlavný AI provider pre `/api/generate` a `/api/refine` (Express funkcia). Bez nej `/api/health` vráti `hasKey: false` a API vráti 503. |
+| `GEMINI_API_KEY` | záloha | Gemini pre `/api/generate` a `/api/refine`, keď nie je `MISTRAL_API_KEY`. Obrovská response schéma na Gemini padá (`INVALID_ARGUMENT`). |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | voliteľné | Alternatívny názov kľúča pre Google provider (Next.js cesty v `app/api/*`). |
-| `MISTRAL_API_KEY` | voliteľné | Failover provider (Mistral) pre Next.js cesty. |
+| `MISTRAL_API_KEY` | odporúčané | Hlavný provider Express API (`mistral-large-latest`, JSON mode bez Gemini schémy). Keď je nastavený, má prednosť pred Gemini. |
 | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | voliteľné | Distribuovaný rate limit. Bez nich beží in-memory sliding window (per inštancia funkcie). |
 | `APP_URL` | voliteľné | Verejná URL aplikácie (self-referenčné odkazy). |
 
@@ -66,7 +66,7 @@ Build prebehne podľa `vercel.json`: `npm run build` (Vite → `dist/`, PWA asse
 
 ## 5. Post-deploy smoke test ( povinný checklist )
 
-1. `GET https://<tvoja-domena>/api/health` → `{"ok":true,"hasKey":true}` (ak `hasKey:false` → chýba `GEMINI_API_KEY`).
+1. `GET https://<tvoja-domena>/api/health` → `{"ok":true,"hasKey":true,"provider":"mistral"}` (alebo `"gemini"`, ak je nastavený len `GEMINI_API_KEY`). `hasKey:false` znamená, že chýba oba kľúče.
 2. **Funkčné AI**: v UI zadaj nápad (≥ 10 znakov) → „Navrhnúť architektúru" → zobrazí sa kompletný workspace so všetkými 5 sekciami; vyskúšaj aj „Upraviť sekciu" (refine).
 3. `POST /api/generate` s krátkym nápadom → 400; bez `Origin` hlavičky z cudzej domény → 403; 11. požiadavka za minútu → 429.
 4. **Native-feel checklist** (mobil, viď `docs/NATIVE_APP_FEEL_DIAGNOSTIKA_A_BACKLOG.md` §6): žiadny výber textu/callout, žiadny bounce/pull-to-refresh, žiadny zoom, žiadne tap-highlight, skrytý scrollbar, safe-areas pri notch/home bar, klávesnica neposúva obsah mimo obrazovku.

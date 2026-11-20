@@ -55,7 +55,10 @@ test('GET /api/health vracia ok a hasKey podľa AI klienta', async () => {
   try {
     const res = await fetch(`${withKey.baseUrl}/api/health`);
     assert.equal(res.status, 200);
-    assert.deepEqual(await res.json(), { ok: true, hasKey: true });
+    const body = await res.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.hasKey, true);
+    assert.equal(body.provider, 'gemini');
   } finally {
     await stopApiApp(withKey);
   }
@@ -63,7 +66,10 @@ test('GET /api/health vracia ok a hasKey podľa AI klienta', async () => {
   const withoutKey = await startApiApp({ aiClientFactory: () => null, rateLimit: false });
   try {
     const res = await fetch(`${withoutKey.baseUrl}/api/health`);
-    assert.deepEqual(await res.json(), { ok: true, hasKey: false });
+    const body = await res.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.hasKey, false);
+    assert.equal(body.provider, 'none');
   } finally {
     await stopApiApp(withoutKey);
   }
