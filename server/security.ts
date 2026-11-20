@@ -3,7 +3,7 @@ import type { Express } from 'express';
 export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   // 'sha256-…' = hash inline theme-init skriptu v index.html ( zabráni flashu dark módu)
-  "script-src 'self' 'sha256-xdtEP03zA3u1ViIOVbBVrZP8ypFC0R/9JiNGKBPxO2U=",
+  "script-src 'self' 'sha256-xdtEP03zA3u1ViIOVbBVrZP8ypFC0R/9JiNGKBPxO2U='",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   'img-src \'self\' data: blob:',
